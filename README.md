@@ -1,6 +1,14 @@
 # sumosims
 SUMO simulations
 
+## Setup
+- Install SUMO
+- Install python requirements
+```
+pip install -r requirements.txt
+```
+
+## Usage
 To use: 
 ```
 % make PROJ=circular
