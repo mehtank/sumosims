@@ -97,7 +97,7 @@ ax.set_xlim([0,1000])
 # Add colorbar
 cbar = fig.colorbar(cax, ticks=ticks)
 cbar.ax.set_yticklabels(ticks)  # vertically oriented colorbar
-cbar.ax.set_ylabel('Speed (m/s)', rotation=270)
+cbar.ax.set_ylabel('Speed (m/s)', rotation=270, labelpad=20)
 
 # TODO: command line argument?
 #plt.show()
