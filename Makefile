@@ -1,5 +1,9 @@
 net = $(PROJ).net.xml
-.PHONY: net
+cfg = $(PROJ).netccfg
+rou = $(PROJ).rou.xml
+nod = $(PROJ).nod.xml
+edg = $(PROJ).edg.xml
+.PHONY: net clean sumo gui
 
 sumo:	$(net)
 	sumo -c $(PROJ).sumo.cfg
@@ -9,8 +13,12 @@ gui:	$(net)
 
 net:	$(net)
 
-$(net):
-	netconvert --node-files=$(PROJ).nod.xml --edge-files=$(PROJ).edg.xml --output-file=$(PROJ).net.xml
+$(net):	$(nod) $(edg)
+ifeq ("$(wildcard $(cfg))","") 
+	netconvert --node-files=$(nod) --edge-files=$(edg) --output-file=$(net)
+else
+	netconvert -c $(cfg) --output-file=$(net)
+endif
 
 clean:
 	rm *.net.xml
