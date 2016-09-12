@@ -8,7 +8,7 @@ To use:
 
 To create a plot of the resulting data:
 ```
-python python/spatiotemporal.py
+% python python/spatiotemporal.py
 ```
 
 The plot will be in ./labeled.png
