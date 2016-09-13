@@ -10,36 +10,57 @@ import traci.constants as tc
 PORT = 8873
 
 
-vehID = "robot"
-
 def config(base, length, numlanes, maxspeed):
+    # Make loop network
     netfn = makenet(base, length=length, lanes=numlanes)
+    # Define custom filenames based on numbers of lanes and cars
     name = "%s-%dl-%02d" % (base, numlanes, numcars)
-    # set up simulation
+    # Initialize simulation with no cars
     return makecirc(name, netfn=netfn, numcars=0, maxspeed=maxspeed)
 
-def run(numcars, numlanes, edgestarts):
-    """execute the TraCI control loop"""
+def init(cfgfn):
+    # Start simulator
+    sumoBinary = checkBinary('sumo')
+    sumoProcess = subprocess.Popen([
+            sumoBinary, 
+            "--no-step-log",
+            "-c", cfgfn,
+            "--remote-port", str(PORT)], 
+        stdout=sys.stdout, stderr=sys.stderr)
+
+    # Initialize TraCI
     traci.init(PORT)
+    return sumoProcess
+
+def addCar(i, lane):
+    # Add i'th car of simulation to lane, uniformly around loop
+    name = "car%03d" % i
+    x = length * i / numcars
+    for (e, s) in edgestarts.iteritems():
+        if x >= s:
+            starte = e
+            startx = x-s
+
+    traci.vehicle.addFull(name, "route"+starte)
+    traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
+    traci.vehicle.setAccel(name, 10)
+    #traci.vehicle.setParameter(name, "lcSpeedGain", "1000000")
+
+def addCars(numcars, numlanes, edgestarts):
+    # Add numcars cars to simulation
     lane = 0
     for i in range(numcars):
-        name = "car%03d" % i
-        x = length * i / numcars
-        for (e, s) in edgestarts.iteritems():
-            if x >= s:
-                starte = e
-                startx = x-s
-
-        traci.vehicle.addFull(name, "route"+starte)
-        traci.vehicle.setAccel(name, 10)
-        traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
-        #traci.vehicle.setParameter(name, "lcSpeedGain", "1000000")
+        addCar(i, lane)
+        # commented: all in lane 0
+        # uncommented: uniformly in all lanes
         #lane = (lane + 1) % numlanes
 
-    for step in range(500):
+def run(sumoProcess, numSteps):
+    for step in range(numSteps):
         traci.simulationStep()
     traci.close()
     sys.stdout.flush()
+    sumoProcess.wait()
 
 # this is the main entry point of this script
 if __name__ == "__main__":
@@ -54,23 +75,24 @@ if __name__ == "__main__":
 
     numcars=60
 
+    numSteps = 500
+
+    # Still hacky but turns edgelengths into position along loop
     l4 = length/4.
     edgestarts = {"bottom": 0, "right": l4, "top": 2*l4, "left": 3*l4}
 
+    # Do the thing
+    print "Configuring simulation..."
     cfgfn, outs = config(base, length, numlanes, maxspeed)
+    print "Initializing simulation..."
+    spc = init(cfgfn)
+    addCars(numcars, numlanes, edgestarts)
+    print "Running simulation..."
+    run(spc, numSteps)
 
-    sumoBinary = checkBinary('sumo')
-    sumoProcess = subprocess.Popen([
-            sumoBinary, 
-            "--no-step-log",
-            "-c", cfgfn,
-            "--remote-port", str(PORT)], 
-        stdout=sys.stdout, stderr=sys.stderr)
-    run(numcars, numlanes, edgestarts)
-    sumoProcess.wait()
-
+    # Plot results
     nsfn = outs["netstate"]
-    print "Parsing xml file %s..." % nsfn
+    print "Parsing xml output file %s..." % nsfn
     alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, edgestarts, length)
 
     print "Generating interpolated plot..."
