@@ -31,32 +31,13 @@ def run(numcars, numlanes, edgestarts):
                 startx = x-s
 
         traci.vehicle.addFull(name, "route"+starte)
+        traci.vehicle.setAccel(name, 10)
         traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
-        lane = (lane + 1) % numlanes
+        #traci.vehicle.setParameter(name, "lcSpeedGain", "1000000")
+        #lane = (lane + 1) % numlanes
 
-    #traci.vehicle.subscribe(vehID, (tc.VAR_ROAD_ID, tc.VAR_LANEPOSITION))
-    for step in range(1000):
+    for step in range(500):
         traci.simulationStep()
-
-        '''
-        #res = traci.vehicle.getSubscriptionResults(vehID)
-        myx = 0 #res[tc.VAR_LANEPOSITION] + edgestarts[res[tc.VAR_ROAD_ID]]
-
-        alldiff = {}
-        for (e, s) in edgestarts.items():
-            allv = traci.edge.getLastStepVehicleIDs(e)
-            for v in allv:
-                if v != vehID:
-                    alldiff[v] = (s + traci.vehicle.getLanePosition(v) - myx) % length
-        mn = min(alldiff, key=alldiff.get)
-        mx = max(alldiff, key=alldiff.get)
-
-        if (step % 200) == 0:
-            print "Step %d :: " % step, 
-            print "  robot @ %6.2fm, " % myx,
-            print mn, " ahead @ %6.2fm, " % alldiff[mn], 
-            print mx, " behind @ %6.2fm." % (length-alldiff[mx])
-        '''
     traci.close()
     sys.stdout.flush()
 
@@ -68,28 +49,27 @@ if __name__ == "__main__":
 
     base="circsweep"
     length=1000
-    maxspeed=30
     numlanes=2
-    numcars=100
+    maxspeed=30
+
+    numcars=60
 
     l4 = length/4.
     edgestarts = {"bottom": 0, "right": l4, "top": 2*l4, "left": 3*l4}
 
-    cfgfn, nsfn, atfn, lcfn = config(base, length, numlanes, maxspeed)
-    emsfn = "data/%s.emission.xml"%base
+    cfgfn, outs = config(base, length, numlanes, maxspeed)
 
     sumoBinary = checkBinary('sumo')
     sumoProcess = subprocess.Popen([
             sumoBinary, 
             "--no-step-log",
             "-c", cfgfn,
-            "--emission-output", emsfn, 
             "--remote-port", str(PORT)], 
         stdout=sys.stdout, stderr=sys.stderr)
     run(numcars, numlanes, edgestarts)
     sumoProcess.wait()
 
-
+    nsfn = outs["netstate"]
     print "Parsing xml file %s..." % nsfn
     alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, edgestarts, length)
 
@@ -99,5 +79,6 @@ if __name__ == "__main__":
             (trng, "Time (s)"),
             (lanespeeds, 0, maxspeed, "Speed (m/s)"))
 
-    plt.show()
+    #plt.show()
+    plt.savefig("img/2lane.png")
     print "Done!"
