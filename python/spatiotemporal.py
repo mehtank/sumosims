@@ -18,6 +18,7 @@ plotpoints = 100000
 print "Parsing xml file..."
 alldata, trng, xrng, speeds = parsexml(fn, edgestarts, maxpos)
 
+'''
 # matplotlib scatterplot
 
 # subsample data
@@ -40,6 +41,7 @@ plt = scatter("Traffic jams (subsampled data)",
 # TODO: command line argument?
 #plt.show()
 plt.savefig('data.png')
+'''
 
 print "Generating interpolated plot..."
 plt = pcolor("Traffic jams (interpolated data)", 
