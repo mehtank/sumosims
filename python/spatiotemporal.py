@@ -1,7 +1,7 @@
 import random
 
 from parsexml import parsexml
-from plots import scatter, pcolor
+from plots import scatter, pcolor, pcolor_multi
 
 
 # TODO: command line argument?
@@ -16,7 +16,7 @@ maxspeed = 30
 plotpoints = 100000
 
 print "Parsing xml file..."
-alldata, trng, xrng, speeds = parsexml(fn, edgestarts, maxpos)
+alldata, trng, xrng, speeds, lanespeeds = parsexml(fn, edgestarts, maxpos)
 
 '''
 # matplotlib scatterplot
@@ -52,3 +52,9 @@ plt = pcolor("Traffic jams (interpolated data)",
 #plt.show()
 plt.savefig('interp.png')
 print "Done!"
+
+plt = pcolor_multi("Traffic jams (interpolated data)", 
+             (xrng, "Position along loop (m)"),
+             (trng, "Time (s)"),
+             (lanespeeds, 0, maxspeed, "Speed (m/s)"))
+plt.savefig('multi-interp.png')

@@ -33,7 +33,7 @@ for numlanes in (1, 2, 3):
         edgestarts = {"bottom": 0, "right": l4, "top": 2*l4, "left": 3*l4}
 
         print "Parsing xml file %s..." % nsfn
-        alldata, trng, xrng, speeds = parsexml(nsfn, edgestarts, length)
+        alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, edgestarts, length)
 
         print "Generating interpolated plot..."
         plt = pcolor("Traffic jams (%d lanes, %d cars)" % (numlanes, numcars), 
