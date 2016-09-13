@@ -11,9 +11,9 @@ length=1000
 maxspeed=30
 
 for numlanes in (1, 2, 3):
-    netfn = makenet("base", length=length, lanes=numlanes)
+    netfn = makenet(base, length=length, lanes=numlanes)
 
-    for numcars in (5, 10, 15, 20, 25, 30):
+    for numcars in (20, 40, 60, 80, 100, 120):
         name = "%s-%dl-%02d" % (base, numlanes, numcars)
 
         # set up simulation
@@ -36,7 +36,7 @@ for numlanes in (1, 2, 3):
         alldata, trng, xrng, speeds = parsexml(nsfn, edgestarts, length)
 
         print "Generating interpolated plot..."
-        plt = pcolor("Traffic jams (interpolated data, %d cars)" % numcars, 
+        plt = pcolor("Traffic jams (%d lanes, %d cars)" % (numlanes, numcars), 
                     (xrng, "Position along loop (m)"),
                     (trng, "Time (s)"),
                     (speeds, 0, maxspeed, "Speed (m/s)"))
