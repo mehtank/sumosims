@@ -5,6 +5,7 @@ import random
 from sumolib import checkBinary
 import traci
 import traci.constants as tc
+from makecirc import makecirc, makenet
 
 # the port used for communicating with your sumo instance
 PORT = 8873
@@ -64,7 +65,6 @@ def run(sumoProcess, numSteps):
 
 # this is the main entry point of this script
 if __name__ == "__main__":
-    from makecirc import makecirc, makenet
     from parsexml import parsexml
     from plots import pcolor, pcolor_multi
 
