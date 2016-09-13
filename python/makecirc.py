@@ -13,7 +13,7 @@ def makexml(name, nsl):
 def printxml(t, fn):
     etree.ElementTree(t).write(fn, pretty_print=True, encoding='UTF-8', xml_declaration=True) 
 
-def makenet(base, length, lanes, maxSpeed=40):
+def makenet(base, length, lanes, maxSpeed=40, path=""):
     import subprocess
     import sys
 
@@ -31,18 +31,18 @@ def makenet(base, length, lanes, maxSpeed=40):
     x.append(E("node", id="bottom-right", x=repr(l4), y=repr(0)))
     x.append(E("node", id="top-right", x=repr(l4), y=repr(l4)))
     x.append(E("node", id="top-left", x=repr(0), y=repr(l4)))
-    printxml(x, nodfn)
+    printxml(x, path+nodfn)
 
     x = makexml("edges", "http://sumo.dlr.de/xsd/edges_file.xsd")
     x.append(E("edge", attrib={"id":"bottom", "from":"bottom-left",  "to":"bottom-right", "type":"edgeType"}))
     x.append(E("edge", attrib={"id":"right",  "from":"bottom-right", "to":"top-right",    "type":"edgeType"}))
     x.append(E("edge", attrib={"id":"top",    "from":"top-right",    "to":"top-left",     "type":"edgeType"}))
     x.append(E("edge", attrib={"id":"left",   "from":"top-left",     "to":"bottom-left",  "type":"edgeType"}))
-    printxml(x, edgfn)
+    printxml(x, path+edgfn)
 
     x = makexml("types", "http://sumo.dlr.de/xsd/types_file.xsd")
     x.append(E("type", id="edgeType",  numLanes=repr(lanes), speed=repr(maxSpeed)))
-    printxml(x, typfn)
+    printxml(x, path+typfn)
 
     x = makexml("configuration", "http://sumo.dlr.de/xsd/netconvertConfiguration.xsd")
     t = E("input")
@@ -57,14 +57,14 @@ def makenet(base, length, lanes, maxSpeed=40):
     t.append(E("no-internal-links", value="true"))
     t.append(E("no-turnarounds", value="true"))
     x.append(t)
-    printxml(x, cfgfn)
+    printxml(x, path+cfgfn)
 
     # netconvert -c $(cfg) --output-file=$(net)
     retcode = subprocess.call(
-        ['netconvert', "-c", cfgfn],
+        ['netconvert', "-c", path+cfgfn],
         stdout=sys.stdout, stderr=sys.stderr)
 
-    return netfn
+    return path+netfn
 
 def makecirc(name, netfn=None, maxspeed=30, numcars=100, maxt=3000, mint=0, dataprefix="data/"):
     roufn = "%s.rou.xml" % name
