@@ -72,6 +72,9 @@ class LoopSim:
         # Initialize TraCI
         traci.init(self.port)
 
+        self.humanCars = []
+        self.robotCars = []
+
     def _getEdge(self, x):
         for (e, s) in self.edgestarts.iteritems():
             if x >= s:
@@ -79,14 +82,17 @@ class LoopSim:
                 startx = x-s
         return starte, startx
 
-    def _addCars(self, numCars, maxSpeed, accel, laneSpread, carParams):
+    def _addCars(self, numCars, maxSpeed, accel, carParams, laneSpread, isRobot):
         # Add numCars cars to simulation
         lane = 0
-        self.humanCars = []
-        self.robotCars = []
         for i in range(numCars):
-            name = "car%03d" % i
-            self.humanCars.append(name)
+            if isRobot:
+                name = "robot%03d" % i
+                self.robotCars.append(name)
+            else:
+                name = "human%03d" % i
+                self.humanCars.append(name)
+
             starte, startx = self._getEdge(self.length * i / numCars)
 
             traci.vehicle.addFull(name, "route"+starte)
@@ -118,21 +124,34 @@ class LoopSim:
     def simulate(self, opts):
 
         self.label = opts.get("label", None)
-        self.numCars = opts.get("numCars", 100)
-        self.maxSpeed = opts.get("maxSpeed", 30)
-        accel = opts.get("accel", None)
-        laneSpread = opts.get("laneSpread", False)
-        carParams = opts.get("carParams", None)
+        tag = opts.get("tag", None)
+
+        humanParams = opts.get("humanParams", dict())
+        self.numHumans = humanParams.pop("count", 100)
+        humanMaxSpeed = humanParams.pop("maxSpeed", 30)
+        humanAccel = humanParams.pop("accel", None)
+        humanCarFn = humanParams.pop("function", None)
+        humanSpread = humanParams.pop("laneSpread", False)
+
+        robotParams = opts.get("robotParams", dict())
+        self.numRobots = robotParams.pop("count", 0)
+        robotMaxSpeed = robotParams.pop("maxSpeed", 30)
+        robotAccel = robotParams.pop("accel", None)
+        robotCarFn = robotParams.pop("function", None)
+        robotSpread = robotParams.pop("laneSpread", False)
+
         simSteps = opts.get("simSteps", 500)
 
-        humanCarFn = opts.get("humanCarFn", None)
-        robotCarFn = opts.get("robotCarFn", None)
+        self.maxSpeed = max(humanMaxSpeed, robotMaxSpeed)
 
         if self.label is None:
-            self.label = "n%03d-s%02d-a%02d" % (self.numCars, self.maxSpeed, accel)
+            self.label = "h%03d-r%03d" % (self.numHumans, self.numRobots)
+        if tag is not None:
+            self.label += "-" + tag
 
         self._simInit("-" + self.label)
-        self._addCars(self.numCars, self.maxSpeed, accel, laneSpread, carParams)
+        self._addCars(self.numHumans, humanMaxSpeed, humanAccel, humanParams, humanSpread, isRobot=False)
+        self._addCars(self.numRobots, robotMaxSpeed, robotAccel, robotParams, robotSpread, isRobot=True)
         self._run(simSteps, humanCarFn, robotCarFn)
 
     def plot(self, show=True, save=False):
@@ -141,7 +160,8 @@ class LoopSim:
         alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, self.edgestarts, self.length)
 
         print "Generating interpolated plot..."
-        plt = pcolor_multi("Traffic jams (%d lanes, %d cars)" % (self.numLanes, self.numCars), 
+        plt = pcolor_multi("Traffic jams (%d lanes, %d humans, %d robots)" % 
+                    (self.numLanes, self.numHumans, self.numRobots), 
                 (xrng, "Position along loop (m)"),
                 (trng, "Time (s)"),
                 (lanespeeds, 0, self.maxSpeed, "Speed (m/s)"))
@@ -157,26 +177,24 @@ class LoopSim:
 if __name__ == "__main__":
     import random
 
-    '''
-    params = {
-            "lcSpeedGain" : "100",
-            }
-    '''
-
     def humanCarFn(v):
         li = traci.vehicle.getLaneIndex(v)
         if random.random() > .99:
             traci.vehicle.changeLane(v, 1-li, 1000)
 
+    humanParams = {
+            "count"       :  80,
+            "maxSpeed"    :  30,
+            "accel"       :   2,
+            "function"    : humanCarFn,
+            "laneSpread"  : False,
+            #"lcSpeedGain" : 100,
+            }
+
     opts = {
-            "numCars"   :     80,
-            "maxSpeed"  :     30,
-            "accel"     :     2,
-            "laneSpread":  False,
-            "carParams" : None,
-            "simSteps"  :    500,
-            "humanCarFn":humanCarFn,
-            "label"     : ".01-lane-change"
+            "humanParams": humanParams,
+            "simSteps"   :    500,
+            "tag"      : ".01-lane-change"
             }
 
     sim = LoopSim("loopsim", length=1000, numLanes=2)
