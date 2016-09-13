@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     <vType accel="1.5" decel="4.5" id="car" length="5" maxSpeed="30"/>
-    <flow begin="0" departPos="free" id="carRight" period="1" number="30" route="routeRight" type="car"/>
-    <flow begin="0" departPos="free" id="carTop" period="1" number="30" route="routeTop" type="car"/>
-    <flow begin="0" departPos="free" id="carLeft" period="1" number="30" route="routeLeft" type="car"/>
-    <flow begin="0" departPos="free" id="carBottom" period="1" number="30" route="routeBottom" type="car"/>
+    <vType accel="1.5" decel="4.5" id="auto" length="5" maxSpeed="30"/>
+    <flow begin="0" departPos="free" id="carRight" period="1" number="12" route="routeRight" type="car"/>
+    <flow begin="0" departPos="free" id="carTop" period="1" number="12" route="routeTop" type="car"/>
+    <flow begin="0" departPos="free" id="carLeft" period="1" number="12" route="routeLeft" type="car"/>
+    <flow begin="0" departPos="free" id="carBottom" period="1" number="12" route="routeBottom" type="car"/>
+    <vehicle id="robot" depart="0" color="1,0,0" route="routeBottom" type="auto"/>
 </routes>
