@@ -63,7 +63,11 @@ def pcolor_multi(title, (xrng, xlabel),
                   (yrng, ylabel), 
                   (sdict, smin, smax, slabel)):
 
-    fig, axarr = plt.subplots(1, len(sdict))
+    if len(sdict) > 1:
+        fig, axarr = plt.subplots(1, len(sdict))
+    else:
+        fig, ax = plt.subplots()
+        axarr = [ax]
 
     for (ax, (sid, s)) in zip(axarr, sdict.items()):
         cax = ax.pcolormesh(array(s),

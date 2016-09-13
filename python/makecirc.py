@@ -104,37 +104,43 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=100, maxt=3000, mint=0, data
         return inp
 
     def outputs(name, prefix="data/"):
-        inp = E("output")
-        nsfn = prefix+"%s.netstate.xml" % name
-        atfn = prefix+"%s.amitran.xml" % name
-        lcfn = prefix+"%s.lanechange.xml" % name
-        inp.append(E("netstate-dump", value=nsfn))
-        inp.append(E("amitran-output", value=atfn))
-        inp.append(E("lanechange-output", value=lcfn))
-        return inp, nsfn, atfn, lcfn
+        t = E("output")
+        outs = {"netstate": "dump", 
+                "amitran":"output", 
+                "lanechange":"output", 
+                "emission":"output", }
 
-    rts = {"Top": "top left bottom right", 
-           "Left": "top left bottom right",
-           "Bottom": "bottom right top left",
-           "Right": "bottom right top left"}
+        for (key, val) in outs.iteritems():
+            fn = prefix+"%s.%s.xml" % (name, key)
+            t.append(E("%s-%s" % (key, val), value=fn))
+            outs[key] = fn
+        return t, outs
+
+    rts = {"top": "top left bottom right", 
+           "left": "left bottom right top",
+           "bottom": "bottom right top left",
+           "right": "right top left bottom"}
 
     add = makexml("additional", "http://sumo.dlr.de/xsd/additional_file.xsd")
     for (rt, edge) in rts.items():
         add.append(E("route", id="route%s"%rt, edges=edge))
-    add.append(rerouter("rerouterBottom", "bottom", "routeRight"))
-    add.append(rerouter("rerouterTop", "top", "routeLeft"))
+    add.append(rerouter("rerouterBottom", "bottom", "routebottom"))
+    add.append(rerouter("rerouterTop", "top", "routetop"))
     printxml(add, addfn)
 
-    routes = makexml("routes", "http://sumo.dlr.de/xsd/routes_file.xsd")
-    routes.append(vtype("car", maxspeed))
-    for rt in rts:
-        routes.append(flow("car%s" % rt, numcars/len(rts), "car", "route%s" % rt, 
-                        begin="0", period="1", departPos="free"))
-    printxml(routes, roufn)
+    if numcars > 0:
+        routes = makexml("routes", "http://sumo.dlr.de/xsd/routes_file.xsd")
+        routes.append(vtype("car", maxspeed))
+        for rt in rts:
+            routes.append(flow("car%s" % rt, numcars/len(rts), "car", "route%s" % rt, 
+                            begin="0", period="1", departPos="free"))
+        printxml(routes, roufn)
+    else:
+        roufn=False
 
     cfg = makexml("configuration", "http://sumo.dlr.de/xsd/sumoConfiguration.xsd")
     cfg.append(inputs(name, net=netfn, add=addfn, rou=roufn))
-    t, nsfn, atfn, lcfn = outputs(name, prefix=dataprefix)
+    t, outs = outputs(name, prefix=dataprefix)
     cfg.append(t)
     t = E("time")
     t.append(E("begin", value=repr(mint)))
@@ -142,10 +148,10 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=100, maxt=3000, mint=0, data
     cfg.append(t)
 
     printxml(cfg, cfgfn)
-    return cfgfn, nsfn, atfn, lcfn
+    return cfgfn, outs
 
 if __name__ == "__main__":
     base = "circtest"
     netfn = makenet(base, length=1000, lanes=3)
-    cfgfn, nsfn, atfn, lcfn = makecirc(base, netfn=netfn, maxspeed=30, numcars=100, maxt=3000)
+    cfgfn, outs = makecirc(base, netfn=netfn, maxspeed=30, numcars=100, maxt=3000)
     print cfgfn

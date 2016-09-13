@@ -18,7 +18,7 @@ for numlanes in (1, 2, 3):
 
         # set up simulation
         print "Setting up simulaton..."
-        cfgfn, nsfn, atfn, lcfn = makecirc(name, netfn=netfn, numcars=numcars, maxspeed=maxspeed)
+        cfgfn, outs = makecirc(name, netfn=netfn, numcars=numcars, maxspeed=maxspeed)
 
         # run simulation
         print "Running simulaton..."
@@ -32,6 +32,7 @@ for numlanes in (1, 2, 3):
         l4 = length/4.
         edgestarts = {"bottom": 0, "right": l4, "top": 2*l4, "left": 3*l4}
 
+        nsfn = outs["netstate"]
         print "Parsing xml file %s..." % nsfn
         alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, edgestarts, length)
 
