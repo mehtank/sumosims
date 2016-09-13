@@ -113,16 +113,16 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=100, maxt=3000, mint=0, data
         inp.append(E("lanechange-output", value=lcfn))
         return inp, nsfn, atfn, lcfn
 
-    rts = {"Top": "top left bottom right", 
-           "Left": "top left bottom right",
-           "Bottom": "bottom right top left",
-           "Right": "bottom right top left"}
+    rts = {"top": "top left bottom right", 
+           "left": "left bottom right top",
+           "bottom": "bottom right top left",
+           "right": "right top left bottom"}
 
     add = makexml("additional", "http://sumo.dlr.de/xsd/additional_file.xsd")
     for (rt, edge) in rts.items():
         add.append(E("route", id="route%s"%rt, edges=edge))
-    add.append(rerouter("rerouterBottom", "bottom", "routeRight"))
-    add.append(rerouter("rerouterTop", "top", "routeLeft"))
+    add.append(rerouter("rerouterBottom", "bottom", "routebottom"))
+    add.append(rerouter("rerouterTop", "top", "routetop"))
     printxml(add, addfn)
 
     if numcars > 0:
