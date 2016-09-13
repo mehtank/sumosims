@@ -82,8 +82,11 @@ class LoopSim:
     def _addCars(self, numCars, maxSpeed, accel, laneSpread, carParams):
         # Add numCars cars to simulation
         lane = 0
+        self.humanCars = []
+        self.robotCars = []
         for i in range(numCars):
             name = "car%03d" % i
+            self.humanCars.append(name)
             starte, startx = self._getEdge(self.length * i / numCars)
 
             traci.vehicle.addFull(name, "route"+starte)
@@ -98,9 +101,16 @@ class LoopSim:
             if laneSpread:
                 lane = (lane + 1) % self.numLanes
 
-    def _run(self, simSteps):
+    def _run(self, simSteps, humanCarFn, robotCarFn):
         for step in range(simSteps):
             traci.simulationStep()
+            if humanCarFn is not None:
+                for v in self.humanCars:
+                    humanCarFn(v)
+            if robotCarFn is not None:
+                for v in self.robotCars:
+                    robotCarFn(v)
+
         traci.close()
         sys.stdout.flush()
         self.sumoProcess.wait()
@@ -115,12 +125,15 @@ class LoopSim:
         carParams = opts.get("carParams", None)
         simSteps = opts.get("simSteps", 500)
 
+        humanCarFn = opts.get("humanCarFn", None)
+        robotCarFn = opts.get("robotCarFn", None)
+
         if self.label is None:
             self.label = "n%03d-s%02d-a%02d" % (self.numCars, self.maxSpeed, accel)
 
         self._simInit("-" + self.label)
         self._addCars(self.numCars, self.maxSpeed, accel, laneSpread, carParams)
-        self._run(simSteps)
+        self._run(simSteps, humanCarFn, robotCarFn)
 
     def plot(self, show=True, save=False):
         # Plot results
@@ -142,17 +155,28 @@ class LoopSim:
 
 # this is the main entry point of this script
 if __name__ == "__main__":
+    import random
+
+    '''
     params = {
             "lcSpeedGain" : "100",
             }
+    '''
+
+    def humanCarFn(v):
+        li = traci.vehicle.getLaneIndex(v)
+        if random.random() > .99:
+            traci.vehicle.changeLane(v, 1-li, 1000)
 
     opts = {
-            "numCars"   :     60,
+            "numCars"   :     80,
             "maxSpeed"  :     30,
-            "accel"     :     10,
+            "accel"     :     2,
             "laneSpread":  False,
             "carParams" : None,
             "simSteps"  :    500,
+            "humanCarFn":humanCarFn,
+            "label"     : ".01-lane-change"
             }
 
     sim = LoopSim("loopsim", length=1000, numLanes=2)
