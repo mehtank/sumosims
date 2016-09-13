@@ -125,12 +125,15 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=100, maxt=3000, mint=0, data
     add.append(rerouter("rerouterTop", "top", "routeLeft"))
     printxml(add, addfn)
 
-    routes = makexml("routes", "http://sumo.dlr.de/xsd/routes_file.xsd")
-    routes.append(vtype("car", maxspeed))
-    for rt in rts:
-        routes.append(flow("car%s" % rt, numcars/len(rts), "car", "route%s" % rt, 
-                        begin="0", period="1", departPos="free"))
-    printxml(routes, roufn)
+    if numcars > 0:
+        routes = makexml("routes", "http://sumo.dlr.de/xsd/routes_file.xsd")
+        routes.append(vtype("car", maxspeed))
+        for rt in rts:
+            routes.append(flow("car%s" % rt, numcars/len(rts), "car", "route%s" % rt, 
+                            begin="0", period="1", departPos="free"))
+        printxml(routes, roufn)
+    else:
+        roufn=False
 
     cfg = makexml("configuration", "http://sumo.dlr.de/xsd/sumoConfiguration.xsd")
     cfg.append(inputs(name, net=netfn, add=addfn, rou=roufn))
