@@ -64,24 +64,31 @@ def pcolor_multi(title, (xrng, xlabel),
                   (sdict, smin, smax, slabel)):
 
     if len(sdict) > 1:
-        fig, axarr = plt.subplots(1, len(sdict))
+        fig, axarr = plt.subplots(1, len(sdict), sharey=True)
     else:
         fig, ax = plt.subplots()
         axarr = [ax]
 
-    for (ax, (sid, s)) in zip(axarr, sdict.items()):
+    for (ax, sid) in zip(axarr, sorted(sdict)):
+        s = sdict[sid]
         cax = ax.pcolormesh(array(s),
                 vmin=smin, vmax=smax, 
                 cmap=my_cmap)
-        ax.set_title(title + " <%s>" % repr(sid))
-        ax.set_ylabel(ylabel)
-        ax.set_xlabel(xlabel)
+        ax.set_title("lane %s" % repr(sid))
         ax.axis('tight')
         ax.invert_yaxis()
 
+    axarr[0].set_ylabel(ylabel)
+    fig.text(0.5, 0.975, title, 
+            horizontalalignment='center', verticalalignment='top')
+    fig.text(0.5, 0.025, xlabel, 
+            horizontalalignment='center', verticalalignment='bottom')
     # Add colorbar
+    fig.subplots_adjust(right=0.8)
+    cbar_ax = fig.add_axes([0.84, 0.1, 0.02, 0.8])
+
     ticks = [smin, (smin+smax)/2, smax]
-    cbar = fig.colorbar(cax, ticks=ticks)
+    cbar = fig.colorbar(cax, cax=cbar_ax, ticks=ticks)
     cbar.ax.set_yticklabels(ticks)  # vertically oriented colorbar
     cbar.ax.set_ylabel(slabel, rotation=270, labelpad=20)
 
