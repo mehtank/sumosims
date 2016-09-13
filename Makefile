@@ -4,7 +4,7 @@ cfg = $(PROJ).netccfg
 rou = $(PROJ).rou.xml
 nod = $(PROJ).nod.xml
 edg = $(PROJ).edg.xml
-emission_output = $(PROJ).emission.xml
+emission_output = data/$(PROJ).emission.xml
 .PHONY: net clean sumo gui
 
 sumo:	$(net)
