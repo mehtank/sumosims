@@ -2,6 +2,10 @@ from lxml import objectify
 from scipy import interpolate
 
 def interp(x, y, xmax):
+        if len(x) == 0:
+            x = [0]
+            y = [0]
+
         newx = []; newy = []
 
         newindex = x.index(max(x))
@@ -24,22 +28,36 @@ def parsexml(fn, edgestarts, xmax):
     trng = []
     xrng = range(0, xmax)
     speeds = []
+    lanespeeds = {}
 
     for timestep in obj.timestep:
         t = float(timestep.get("time"))
         this = []
+        lanedata = {}
         for edge in timestep.edge:
             for lane in edge.lane:
+                lid = lane.get("id")[-1]
+                if not lid in lanedata:
+                    lanedata[lid] = []
+                thislane = []
                 try:
                     for vehicle in lane.vehicle:
                         name = vehicle.get("id")
                         v = float(vehicle.get("speed"))
                         x = float(vehicle.get("pos"))+edgestarts[edge.get("id")]
-                        this.append({"name": name, "time": t, "position": x, "speed": v})
+                        thislane.append({"name": name, "time": t, "position": x, "speed": v})
                 except AttributeError:
                     pass
+                this.extend(thislane)
+                lanedata[lid].extend(thislane)
         alldata.extend(this)
         trng.append(t)
         f = interp([x["position"] for x in this], [x["speed"] for x in this], xmax)
         speeds.append(f(xrng))
-    return alldata, trng, xrng, speeds
+        for lid, thislane in lanedata.iteritems():
+            f = interp([x["position"] for x in thislane], [x["speed"] for x in thislane], xmax)
+            if not lid in lanespeeds:
+                lanespeeds[lid] = []
+            lanespeeds[lid].append(f(xrng))
+
+    return alldata, trng, xrng, speeds, lanespeeds
