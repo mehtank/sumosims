@@ -1,4 +1,7 @@
-import subprocess, sys
+import subprocess
+import sys
+import os
+import errno
 
 # Make sure $SUMO_HOME/tools is in $PYTHONPATH
 from sumolib import checkBinary
@@ -12,9 +15,18 @@ from plots import pcolor, pcolor_multi
 
 # the port used for communicating with your sumo instance
 PORT = 8873
+
+NET_PATH = "net/"
 IMG_PATH = "img/"
 DATA_PATH = "data/"
 
+def ensure_dir(path):
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
+    return path
 
 class LoopSim:
 
@@ -29,9 +41,18 @@ class LoopSim:
                            "top": 2*edgelen, 
                            "left": 3*edgelen}
 
+        self._mkdirs(name)
         # Make loop network
-        self.netfn = makenet(self.name, length=self.length, lanes=self.numLanes)
+        self.netfn = makenet(self.name, 
+                length=self.length, 
+                lanes=self.numLanes,
+                path=self.net_path)
         self.port = port
+
+    def _mkdirs(self, name):
+        self.net_path = ensure_dir("%s" % NET_PATH)
+        self.data_path = ensure_dir("%s" % DATA_PATH)
+        self.img_path = ensure_dir("%s" % IMG_PATH)
 
     def _simInit(self, suffix):
         self.cfgfn, self.outs = makecirc(self.name+suffix, 
