@@ -105,10 +105,13 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=100, maxt=3000, mint=0, data
 
     def outputs(name, prefix="data/"):
         inp = E("output")
-        inp.append(E("netstate-dump", value=prefix+"%s.netstate.xml" % name))
-        inp.append(E("amitran-output", value=prefix+"%s.amitran.xml" % name))
-        inp.append(E("lanechange-output", value=prefix+"%s.lanechange.xml" % name))
-        return inp
+        nsfn = prefix+"%s.netstate.xml" % name
+        atfn = prefix+"%s.amitran.xml" % name
+        lcfn = prefix+"%s.lanechange.xml" % name
+        inp.append(E("netstate-dump", value=nsfn))
+        inp.append(E("amitran-output", value=atfn))
+        inp.append(E("lanechange-output", value=lcfn))
+        return inp, nsfn, atfn, lcfn
 
     rts = {"Top": "top left bottom right", 
            "Left": "top left bottom right",
@@ -131,17 +134,18 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=100, maxt=3000, mint=0, data
 
     cfg = makexml("configuration", "http://sumo.dlr.de/xsd/sumoConfiguration.xsd")
     cfg.append(inputs(name, net=netfn, add=addfn, rou=roufn))
-    cfg.append(outputs(name, prefix=dataprefix))
+    t, nsfn, atfn, lcfn = outputs(name, prefix=dataprefix)
+    cfg.append(t)
     t = E("time")
     t.append(E("begin", value=repr(mint)))
     t.append(E("end", value=repr(maxt)))
     cfg.append(t)
 
     printxml(cfg, cfgfn)
-    return cfgfn
+    return cfgfn, nsfn, atfn, lcfn
 
 if __name__ == "__main__":
     base = "circtest"
     netfn = makenet(base, length=1000, lanes=3)
-    cfgfn = makecirc(base, netfn=netfn, maxspeed=30, numcars=100, maxt=3000)
+    cfgfn, nsfn, atfn, lcfn = makecirc(base, netfn=netfn, maxspeed=30, numcars=100, maxt=3000)
     print cfgfn
