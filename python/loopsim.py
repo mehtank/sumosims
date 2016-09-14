@@ -150,10 +150,10 @@ class LoopSim:
 
             if humanCarFn is not None:
                 for v in self.humanCars:
-                    humanCarFn(v, robotCars=self.robotCars, humanCars=self.humanCars)
+                    humanCarFn(v, self, allCars)
             if robotCarFn is not None:
                 for v in self.robotCars:
-                    robotCarFn(v, robotCars=self.robotCars, humanCars=self.humanCars)
+                    robotCarFn(v, self, allCars)
 
         traci.close()
         sys.stdout.flush()
@@ -210,37 +210,32 @@ class LoopSim:
 if __name__ == "__main__":
     import random
 
-    def randomChangeLaneFn(v, humanCars=None, robotCars=None):
-        li = traci.vehicle.getLaneIndex(v)
+    def randomChangeLaneFn(v, sim, allCars):
+        li = allCars[v]["lane"]
         if random.random() > .99:
             traci.vehicle.changeLane(v, 1-li, 1000)
 
 
-    def ACCFn(v, humanCars=None, robotCars=None):
+    def ACCFn(v, sim, allCars):
         # traci.vehicle.setTau(v, 0)
-        li = traci.vehicle.getLaneIndex(v)
-        # ((front_vID, front_dist), (back_vID, back_dist)) = headway(v, humanCars + robotCars, lane=li, length=c.LENGTH)
-        # print (front_vID, front_dist), (back_vID, back_dist)
+        li = allCars[v]["lane"]
+        ((front_vID, front_dist), (back_vID, back_dist)) = headway(v, allCars, sim.length)
+        print (front_vID, front_dist), (back_vID, back_dist)
 
     humanParams = {
             "count"       :  80,
             "maxSpeed"    :  30,
             "accel"       :   2,
-            "function"    : ACCFn,
+            "function"    : randomChangeLaneFn,
             "laneSpread"  : 0,
             "lcSpeedGain" : 100,
             }
-
-    def robotCarFn(v, humanCars, robotCars):
-        li = traci.vehicle.getLaneIndex(v)
-        if random.random() > .99:
-            traci.vehicle.changeLane(v, 1-li, 1000)
 
     robotParams = {
             "count"       :   7,
             "maxSpeed"    :  30,
             "accel"       :   2,
-            "function"    : robotCarFn,
+            "function"    : ACCFn,
             "laneSpread"  : 0,
             }
 
