@@ -8,18 +8,11 @@ from sumolib import checkBinary
 import traci
 import traci.constants as tc
 
-import config as c
+import config as defaults
 from makecirc import makecirc, makenet
 from parsexml import parsexml
 from plots import pcolor, pcolor_multi
 
-
-# the port used for communicating with your sumo instance
-PORT = 8873
-
-NET_PATH = "net/"
-IMG_PATH = "img/"
-DATA_PATH = "data/"
 
 def ensure_dir(path):
     try:
@@ -31,7 +24,8 @@ def ensure_dir(path):
 
 class LoopSim:
 
-    def __init__(self, name, length, numLanes, port=PORT):
+    def __init__(self, name, length, numLanes, 
+            maxSpeed=defaults.SPEED_LIMIT, port=defaults.PORT):
         self.name = "%s-%dm%dl" % (name, length, numLanes)
         self.length = length
         self.numLanes = numLanes
@@ -47,19 +41,20 @@ class LoopSim:
         self.netfn = makenet(self.name, 
                 length=self.length, 
                 lanes=self.numLanes,
+                maxSpeed=maxSpeed,
                 path=self.net_path)
         self.port = port
 
     def _mkdirs(self, name):
-        self.net_path = ensure_dir("%s" % NET_PATH)
-        self.data_path = ensure_dir("%s" % DATA_PATH)
-        self.img_path = ensure_dir("%s" % IMG_PATH)
+        self.net_path = ensure_dir("%s" % defaults.NET_PATH)
+        self.data_path = ensure_dir("%s" % defaults.DATA_PATH)
+        self.img_path = ensure_dir("%s" % defaults.IMG_PATH)
 
     def _simInit(self, suffix):
         self.cfgfn, self.outs = makecirc(self.name+suffix, 
                 netfn=self.netfn, 
                 numcars=0, 
-                dataprefix = DATA_PATH)
+                dataprefix = defaults.DATA_PATH)
 
         # Start simulator
         sumoBinary = checkBinary('sumo')
@@ -67,7 +62,7 @@ class LoopSim:
                 sumoBinary, 
                 "--no-step-log",
                 "-c", self.cfgfn,
-                "--remote-port", str(PORT)], 
+                "--remote-port", str(self.port)], 
             stdout=sys.stdout, stderr=sys.stderr)
 
         # Initialize TraCI
