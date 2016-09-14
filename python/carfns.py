@@ -1,4 +1,5 @@
 import random
+from numpy import mean
 
 import traci
 
@@ -7,6 +8,44 @@ def randomChangeLaneFn((idx, car), sim, step):
     li = car["lane"]
     if random.random() > .99:
         traci.vehicle.changeLane(car["id"], 1-li, 1000)
+
+def changeFasterLaneBuilder(speedThreshold = 5, likelihood = 0.5, 
+                            dxBack = 0, dxForward = 60, 
+                            gapBack = 10, gapForward = 5):
+    """
+    Intelligent lane changer
+    :param speedThreshold: minimum speed increase required
+    :param likelihood: probability change will be requested if warranted
+    :param dxBack: Farthest distance back car can see
+    :param dxForward: Farthest distance forward car can see
+    :param gapBack: Minimum required clearance behind car 
+    :param gapForward: Minimum required clearance in front car 
+    :return: carFn to input to a carParams
+    """
+    def carFn((idx, car), sim, step):
+        if step < 250:
+            return
+
+        v = [0] * sim.numLanes
+        for lane in range(sim.numLanes):
+            if sim.getCars(idx, dxBack=gapBack, dxForward=gapForward, lane=lane):
+                # cars too close, no lane changing allowed
+                v[lane] = 0
+                continue
+            cars = sim.getCars(idx, dxBack=dxBack, dxForward=dxForward, lane=lane)
+            if len(cars) > 0:
+                v[lane] = mean([c["v"] for c in cars])
+            else:
+                v[lane] = traci.vehicle.getMaxSpeed(car["id"])
+        maxv = max(v)
+        maxl = v.index(maxv)
+        myv = v[car["lane"]]
+
+        if maxl != car["lane"] and \
+           (maxv - myv) > speedThreshold and \
+           random.random() < likelihood:
+            traci.vehicle.changeLane(car["id"], maxl, 10000)
+    return carFn
 
 def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1):
     """

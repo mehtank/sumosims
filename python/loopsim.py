@@ -237,22 +237,22 @@ class LoopSim:
 
 # this is the main entry point of this script
 if __name__ == "__main__":
-    from carfns import randomChangeLaneFn, ACCFnBuilder
+    from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder
 
     humanParams = {
-            "count"       :  0,
+            "count"       :  80,
             "maxSpeed"    :  30,
             "accel"       :   2,
-            "function"    : randomChangeLaneFn,
+            "function"    : changeFasterLaneBuilder(),
             "laneSpread"  : 0,
             "lcSpeedGain" : 100,
             }
 
     robotParams = {
-            "count"       :  40,
+            "count"       :   1,
             "maxSpeed"    :  30,
             "accel"       :   2,
-            "function"    : ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1),
+            #"function"    : ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1),
             "laneSpread"  : 0,
             }
 
@@ -260,9 +260,9 @@ if __name__ == "__main__":
             "humanParams": humanParams,
             "robotParams": robotParams,
             "simSteps"   : 500,
-            "tag"        : "ACCrobots"
+            "tag"        : "laneChange"
             }
 
-    sim = LoopSim("loopsim", length=1000, numLanes=1)
+    sim = LoopSim("loopsim", length=1000, numLanes=2)
     sim.simulate(opts)
     sim.plot(show=True, save=True)
