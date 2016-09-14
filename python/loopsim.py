@@ -14,6 +14,16 @@ from parsexml import parsexml
 from plots import pcolor, pcolor_multi
 
 
+KNOWN_PARAMS = {
+        "maxSpeed"      : traci.vehicle.setMaxSpeed,
+        "accel"         : traci.vehicle.setAccel,
+        "decel"         : traci.vehicle.setAccel,
+        "sigma"         : traci.vehicle.setImperfection,
+        "tau"           : traci.vehicle.setTau,
+        "speedFactor"   : traci.vehicle.setSpeedFactor,
+        "speedDev"      : traci.vehicle.setSpeedDeviation,
+        }
+
 def ensure_dir(path):
     try:
         os.makedirs(path)
@@ -83,20 +93,20 @@ class LoopSim:
 
     def _createCar(self, name, x, lane, carParams):
         starte, startx = self._getEdge(x)
-        maxSpeed = carParams.pop("maxSpeed", 30)
-        accel = carParams.pop("accel", None)
+
         laneSpread = carParams.pop("laneSpread", True)
         if laneSpread is not True:
             lane = laneSpread
 
         traci.vehicle.addFull(name, "route"+starte)
         traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
-        traci.vehicle.setMaxSpeed(name, maxSpeed)
-        if accel is not None:
-            traci.vehicle.setAccel(name, accel)
+
         if carParams is not None:
             for (pname, pvalue) in carParams.iteritems():
-                traci.vehicle.setParameter(name, pname, repr(pvalue))
+                if pname in KNOWN_PARAMS:
+                    KNOWN_PARAMS[pname](name, pvalue)
+                else:
+                    traci.vehicle.setParameter(name, pname, repr(pvalue))
 
     def _addCars(self, humanParams, robotParams):
         numHumanCars = humanParams.pop("count", 0)
@@ -235,18 +245,20 @@ if __name__ == "__main__":
     from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder
 
     humanParams = {
-            "count"       :  80,
-            "maxSpeed"    :  30,
-            "accel"       :   2,
-            "function"    : changeFasterLaneBuilder(),
+            "count"       :  40,
+            "maxSpeed"    :  40,
+            "accel"       :   4,
+            "decel"       :   6,
+            #"function"    : changeFasterLaneBuilder(),
             "laneSpread"  : 0,
             "lcSpeedGain" : 100,
             }
 
     robotParams = {
-            "count"       :   1,
-            "maxSpeed"    :  30,
-            "accel"       :   2,
+            "count"       :   0,
+            "maxSpeed"    :  40,
+            "accel"       :   4,
+            "decel"       :   6,
             #"function"    : ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1),
             "laneSpread"  : 0,
             }
