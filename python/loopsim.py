@@ -245,16 +245,40 @@ if __name__ == "__main__":
             traci.vehicle.changeLane(car["id"], 1-li, 1000)
 
     def ACCFn((idx, car), sim, step):
+        #### parameters
+        follow_sec=3.0
+        max_speed=26.8
+        gain=0.1
+
+        if step < 250:
+            return
+
         # traci.vehicle.setTau(v, 0)
+        vehID = car["id"]
         [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
-        front_vID = front_car["id"]
+
         front_dist = (front_car["x"] - car["x"]) % sim.length
-        back_vID = back_car["id"]
         back_dist = (car["x"] - back_car["x"]) % sim.length
+
+        curr_speed = car["v"]
+        front_speed = front_car["v"]
+        follow_dist = front_speed*follow_sec
+        delta = front_dist - follow_dist
+        # print delta, curr_speed, front_speed, curr_speed-front_speed
+        if follow_dist < front_dist and curr_speed < max_speed:
+            # speed up
+            new_speed = min(curr_speed + gain * delta, max_speed)
+            traci.vehicle.slowDown(vehID, new_speed, 1000) # 2.5 sec
+            # print curr_speed, new_speed, front_speed, delta, front_dist, follow_dist
+        elif follow_dist > front_dist:
+            # slow down
+            new_speed = max(curr_speed + gain * delta, 0)
+            traci.vehicle.slowDown(vehID, new_speed, 1000) # 2.5 sec
+	# print curr_speed, new_speed, front_speed, delta, front_dist, follow_dist
         # print (front_vID, front_dist), (back_vID, back_dist)
 
     humanParams = {
-            "count"       :  40,
+            "count"       :  0,
             "maxSpeed"    :  30,
             "accel"       :   2,
             "function"    : randomChangeLaneFn,
@@ -263,7 +287,7 @@ if __name__ == "__main__":
             }
 
     robotParams = {
-            "count"       :   7,
+            "count"       :  40,
             "maxSpeed"    :  30,
             "accel"       :   2,
             "function"    : ACCFn,
