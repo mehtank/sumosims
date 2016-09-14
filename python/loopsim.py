@@ -2,6 +2,7 @@ import subprocess
 import sys
 import os
 import errno
+import random
 
 # Make sure $SUMO_HOME/tools is in $PYTHONPATH
 from sumolib import checkBinary
@@ -15,13 +16,13 @@ from plots import pcolor, pcolor_multi
 
 
 KNOWN_PARAMS = {
-        "maxSpeed"      : traci.vehicle.setMaxSpeed,
-        "accel"         : traci.vehicle.setAccel,
-        "decel"         : traci.vehicle.setAccel,
-        "sigma"         : traci.vehicle.setImperfection,
-        "tau"           : traci.vehicle.setTau,
-        "speedFactor"   : traci.vehicle.setSpeedFactor,
-        "speedDev"      : traci.vehicle.setSpeedDeviation,
+        "maxSpeed"      : traci.vehicletype.setMaxSpeed,
+        "accel"         : traci.vehicletype.setAccel,
+        "decel"         : traci.vehicletype.setAccel,
+        "sigma"         : traci.vehicletype.setImperfection,
+        "tau"           : traci.vehicletype.setTau,
+        "speedFactor"   : traci.vehicletype.setSpeedFactor,
+        "speedDev"      : traci.vehicletype.setSpeedDeviation,
         }
 
 def ensure_dir(path):
@@ -60,10 +61,11 @@ class LoopSim:
         self.data_path = ensure_dir("%s" % defaults.DATA_PATH)
         self.img_path = ensure_dir("%s" % defaults.IMG_PATH)
 
-    def _simInit(self, suffix):
+    def _simInit(self, suffix, typeList):
         self.cfgfn, self.outs = makecirc(self.name+suffix, 
                 netfn=self.netfn, 
                 numcars=0, 
+                typelist=typeList,
                 dataprefix = defaults.DATA_PATH)
 
         # Start simulator
@@ -78,9 +80,6 @@ class LoopSim:
         # Initialize TraCI
         traci.init(self.port)
 
-        self.humanCars = []
-        self.robotCars = []
-
     def _getEdge(self, x):
         for (e, s) in self.edgestarts.iteritems():
             if x >= s:
@@ -91,61 +90,59 @@ class LoopSim:
     def _getX(self, edge, position):
         return position + self.edgestarts[edge]
 
-    def _createCar(self, name, x, lane, carParams):
-        starte, startx = self._getEdge(x)
+    def _addTypes(self, paramsList):
+        self.maxSpeed = 0
+        self.carFns = {}
 
-        laneSpread = carParams.pop("laneSpread", True)
-        if laneSpread is not True:
-            lane = laneSpread
+        for params in paramsList:
+            name = params["name"]
+            self.carFns[name] = params.get("function", None)
+            maxSpeed = params.get("maxSpeed", defaults.SPEED_LIMIT)
 
-        traci.vehicle.addFull(name, "route"+starte)
-        traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
-
-        if carParams is not None:
-            for (pname, pvalue) in carParams.iteritems():
+            for (pname, pvalue) in params.iteritems():
                 if pname in KNOWN_PARAMS:
                     KNOWN_PARAMS[pname](name, pvalue)
-                else:
-                    traci.vehicle.setParameter(name, pname, repr(pvalue))
 
-    def _addCars(self, humanParams, robotParams):
-        numHumanCars = humanParams.pop("count", 0)
-        numRobotCars = robotParams.pop("count", 0)
-        numCars = numHumanCars + numRobotCars
+            self.maxSpeed = max(self.maxSpeed, maxSpeed)
 
-        # Add numCars cars to simulation
+    def _createCar(self, name, x, vtype, lane):
+        starte, startx = self._getEdge(x)
+        traci.vehicle.addFull(name, "route"+starte, typeID=vtype)
+        traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
+
+    def _addCars(self, paramsList):
+        cars = {}
+        self.numCars = 0
+
+        # Create car list
+        for param in paramsList:
+            self.numCars += param["count"]
+            for i in range(param["count"]):
+                vtype = param["name"]
+                laneSpread = param.get("laneSpread", True)
+                carname = "%s-%03d" % (vtype, i)
+                cars[carname] = (vtype, laneSpread)
+
         lane = 0
-
-        humansLeft = numHumanCars
-        robotsLeft = numRobotCars
-
-        for i in range(numCars):
-            x = self.length * i / numCars
-            # evenly distribute robot cars and human cars
-            if (robotsLeft == 0 or 
-                (humansLeft > 0 and 
-                 ((humansLeft-1.0)/robotsLeft >= 1.0*numHumanCars/numRobotCars))):
-                    # add human car
-                    name = "human%03d" % i
-                    self.humanCars.append(name)
-                    self._createCar(name, x, lane, humanParams.copy())
-                    humansLeft -= 1
-            else:
-                    # add robot car
-                    name = "robot%03d" % i
-                    self.robotCars.append(name)
-                    self._createCar(name, x, lane, robotParams.copy())
-                    robotsLeft -= 1
-
+        carsitems = cars.items()
+        # Add all cars to simulation ...
+        random.shuffle(carsitems) # randomly
+        for i, (carname, (vtype, laneSpread)) in enumerate(carsitems):
+            x = self.length * i / self.numCars
+            self._createCar(carname, x, vtype, 
+                    lane if laneSpread is True else laneSpread)
             lane = (lane + 1) % self.numLanes
 
-    def _run(self, simSteps, humanCarFn, robotCarFn):
+        self.carNames = cars.keys()
+
+    def _run(self, simSteps):
         for step in range(simSteps):
             traci.simulationStep()
             self.allCars = []
-            for v in self.humanCars + self.robotCars:
+            for v in self.carNames:
                 car = {}
                 car["id"] = v
+                car["type"] = traci.vehicle.getTypeID(v)
                 car["edge"] = traci.vehicle.getRoadID(v)
                 position = traci.vehicle.getLanePosition(v)
                 car["lane"] = traci.vehicle.getLaneIndex(v)
@@ -155,10 +152,9 @@ class LoopSim:
             self.allCars.sort(key=lambda x: x["x"])
 
             for (idx, car) in enumerate(self.allCars):
-                if humanCarFn is not None and car["id"] in self.humanCars:
-                    humanCarFn((idx, car), self, step)
-                elif robotCarFn is not None and car["id"] in self.robotCars:
-                    robotCarFn((idx, car), self, step)
+                carFn = self.carFns[car["type"]]
+                if carFn is not None:
+                    carFn((idx, car), self, step)
 
         traci.close()
         sys.stdout.flush()
@@ -196,30 +192,20 @@ class LoopSim:
         self.label = opts.get("label", None)
         tag = opts.get("tag", None)
 
-        humanParams = opts.get("humanParams", dict())
-        humanCarFn = humanParams.pop("function", None)
-        self.numHumans = humanParams.get("count", 100)
-        humanMaxSpeed = humanParams.get("maxSpeed", 30)
-
-        robotParams = opts.get("robotParams", dict())
-        robotCarFn = robotParams.pop("function", None)
-        self.numRobots = robotParams.get("count", 0)
-        robotMaxSpeed = robotParams.get("maxSpeed", 30)
-
-        self.numCars = self.numHumans+self.numRobots
-
+        paramsList = opts["paramsList"]
         simSteps = opts.get("simSteps", 500)
 
-        self.maxSpeed = max(humanMaxSpeed, robotMaxSpeed)
-
         if self.label is None:
-            self.label = "h%03d-r%03d" % (self.numHumans, self.numRobots)
+            self.label = "-".join([x["name"] + "%03d" % x["count"] 
+                                        for x in paramsList 
+                                        if x["count"] > 0])
         if tag is not None:
             self.label += "-" + tag
 
-        self._simInit("-" + self.label)
-        self._addCars(humanParams, robotParams)
-        self._run(simSteps, humanCarFn, robotCarFn)
+        self._simInit("-" + self.label, [x["name"] for x in paramsList])
+        self._addTypes(paramsList)
+        self._addCars(paramsList)
+        self._run(simSteps)
 
     def plot(self, show=True, save=False):
         # Plot results
@@ -227,8 +213,7 @@ class LoopSim:
         alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, self.edgestarts, self.length)
 
         print "Generating interpolated plot..."
-        plt = pcolor_multi("Traffic jams (%d lanes, %d humans, %d robots)" % 
-                    (self.numLanes, self.numHumans, self.numRobots), 
+        plt = pcolor_multi("Traffic jams (%d lanes, %s)" % (self.numLanes, self.label), 
                 (xrng, "Position along loop (m)"),
                 (trng, "Time (s)"),
                 (lanespeeds, 0, self.maxSpeed, "Speed (m/s)"))
@@ -245,16 +230,21 @@ if __name__ == "__main__":
     from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder
 
     humanParams = {
+            "name"        : "human",
             "count"       :  40,
             "maxSpeed"    :  40,
             "accel"       :   4,
             "decel"       :   6,
             #"function"    : changeFasterLaneBuilder(),
             "laneSpread"  : 0,
-            "lcSpeedGain" : 100,
+            "speedFactor" : 1.0,
+            "speedDev"    : 0.1,
+            "sigma"       : 0.5,
+            "tau"         : 1,
             }
 
     robotParams = {
+            "name"        : "robot",
             "count"       :   0,
             "maxSpeed"    :  40,
             "accel"       :   4,
@@ -264,8 +254,7 @@ if __name__ == "__main__":
             }
 
     opts = {
-            "humanParams": humanParams,
-            "robotParams": robotParams,
+            "paramsList" : [humanParams, robotParams],
             "simSteps"   : 500,
             "tag"        : "laneChange"
             }
