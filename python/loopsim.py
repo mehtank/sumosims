@@ -241,7 +241,7 @@ if __name__ == "__main__":
 
     def randomChangeLaneFn((idx, car), sim, step):
         li = car["lane"]
-        if random.random() > 99:
+        if random.random() > .99:
             traci.vehicle.changeLane(car["id"], 1-li, 1000)
 
     def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1):
