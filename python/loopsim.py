@@ -237,7 +237,7 @@ class LoopSim:
         if show:
             plt.show()
         if save:
-            fig.savefig(IMG_PATH + self.name + "-" + self.label + ".png")
+            fig.savefig(defaults.IMG_PATH + self.name + "-" + self.label + ".png")
         return plt
 
 # this is the main entry point of this script
