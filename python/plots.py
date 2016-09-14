@@ -76,7 +76,6 @@ def pcolor_multi(title, (xrng, xlabel),
         cax = ax.pcolormesh(T(y), T(x), tv,
                 vmin=smin, vmax=smax, 
                 cmap=my_cmap)
-        ax.set_title("lane %s" % sid)
         ax.set_ylabel(xlabel)
         ax.axis('tight')
 
@@ -85,10 +84,11 @@ def pcolor_multi(title, (xrng, xlabel),
         dt = dx * 1./tv[:-1,:]
         ts = sum(diff(xrng))/sum(dt, axis=0)
         axarr[-1].plot(yrng, ts, label="lane %s" % sid)
+        handles, labels = axarr[-1].get_legend_handles_labels()
+        lbl = handles[-1]
+        ax.set_title("lane %s" % sid, color=lbl.get_c())
 
     axarr[-1].set_ylabel("Average loop speed (m/s)")
-    axarr[-1].legend(bbox_to_anchor=(0., 1.02, 1., .051), loc=3,
-                       ncol=numlanes, mode="expand", borderaxespad=0.)
     axarr[-1].set_xlabel(ylabel)
     fig.text(0.5, 0.975, title, 
             horizontalalignment='center', verticalalignment='top')
