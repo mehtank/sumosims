@@ -76,9 +76,9 @@ def pcolor_multi(title, (xrng, xlabel),
                 cmap=my_cmap)
         ax.set_title("lane %s" % repr(sid))
         ax.axis('tight')
-        ax.invert_yaxis()
 
     axarr[0].set_ylabel(ylabel)
+    axarr[0].invert_yaxis()
     fig.text(0.5, 0.975, title, 
             horizontalalignment='center', verticalalignment='top')
     fig.text(0.5, 0.025, xlabel, 
