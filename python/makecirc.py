@@ -66,7 +66,7 @@ def makenet(base, length, lanes, maxSpeed=40, path=""):
 
     return path+netfn
 
-def makecirc(name, netfn=None, maxspeed=30, numcars=100, maxt=3000, mint=0, dataprefix="data/"):
+def makecirc(name, netfn=None, maxspeed=30, numcars=0, typelist=None, maxt=3000, mint=0, dataprefix="data/"):
     roufn = "%s.rou.xml" % name
     addfn = "%s.add.xml" % name
     cfgfn = "%s.sumo.cfg" % name
@@ -135,6 +135,11 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=100, maxt=3000, mint=0, data
             routes.append(flow("car%s" % rt, numcars/len(rts), "car", "route%s" % rt, 
                             begin="0", period="1", departPos="free"))
         printxml(routes, roufn)
+    elif typelist:
+        routes = makexml("routes", "http://sumo.dlr.de/xsd/routes_file.xsd")
+        for tp in typelist:
+            routes.append(E("vType", id=tp))
+        printxml(routes, roufn)
     else:
         roufn=False
 
@@ -153,5 +158,5 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=100, maxt=3000, mint=0, data
 if __name__ == "__main__":
     base = "circtest"
     netfn = makenet(base, length=1000, lanes=3)
-    cfgfn, outs = makecirc(base, netfn=netfn, maxspeed=30, numcars=100, maxt=3000)
+    cfgfn, outs = makecirc(base, netfn=netfn, maxspeed=30, typelist=["human", "robot"], maxt=3000)
     print cfgfn
