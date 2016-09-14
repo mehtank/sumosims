@@ -251,7 +251,10 @@ if __name__ == "__main__":
             "decel"       :   6,
             #"function"    : changeFasterLaneBuilder(),
             "laneSpread"  : 0,
-            "lcSpeedGain" : 100,
+            "speedFactor" : 1.0,
+            "speedDev"    : 0.1,
+            "sigma"       : 0.5,
+            "tau"         : 1,
             }
 
     robotParams = {
