@@ -84,7 +84,11 @@ class LoopSim:
 
     def _addCars(self, numCars, maxSpeed, accel, carParams, laneSpread, isRobot):
         # Add numCars cars to simulation
-        lane = 0
+        if laneSpread is True:
+            lane = 0
+        else:
+            lane = laneSpread
+
         for i in range(numCars):
             if isRobot:
                 name = "robot%03d" % i
@@ -104,7 +108,7 @@ class LoopSim:
                 for (pname, pvalue) in carParams.iteritems():
                     traci.vehicle.setParameter(name, pname, repr(pvalue))
 
-            if laneSpread:
+            if laneSpread is True:
                 lane = (lane + 1) % self.numLanes
 
     def _run(self, simSteps, humanCarFn, robotCarFn):
@@ -187,7 +191,7 @@ if __name__ == "__main__":
             "maxSpeed"    :  30,
             "accel"       :   2,
             "function"    : humanCarFn,
-            "laneSpread"  : False,
+            "laneSpread"  : 0,
             "lcSpeedGain" : 100,
             }
 
