@@ -82,10 +82,22 @@ class LoopSim:
                 startx = x-s
         return starte, startx
 
-    def _addCars(self, carParams, isRobot):
-        numCars = carParams.pop("count", 0)
+    def _createCar(self, name, x, lane, carParams):
+        starte, startx = self._getEdge(x)
         maxSpeed = carParams.pop("maxSpeed", 30)
         accel = carParams.pop("accel", None)
+
+        traci.vehicle.addFull(name, "route"+starte)
+        traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
+        traci.vehicle.setMaxSpeed(name, maxSpeed)
+        if accel is not None:
+            traci.vehicle.setAccel(name, accel)
+        if carParams is not None:
+            for (pname, pvalue) in carParams.iteritems():
+                traci.vehicle.setParameter(name, pname, repr(pvalue))
+
+    def _addCars(self, carParams, isRobot):
+        numCars = carParams.pop("count", 0)
         laneSpread = carParams.pop("laneSpread", False)
 
         # Add numCars cars to simulation
@@ -102,16 +114,8 @@ class LoopSim:
                 name = "human%03d" % i
                 self.humanCars.append(name)
 
-            starte, startx = self._getEdge(self.length * i / numCars)
-
-            traci.vehicle.addFull(name, "route"+starte)
-            traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
-            traci.vehicle.setMaxSpeed(name, maxSpeed)
-            if accel is not None:
-                traci.vehicle.setAccel(name, accel)
-            if carParams is not None:
-                for (pname, pvalue) in carParams.iteritems():
-                    traci.vehicle.setParameter(name, pname, repr(pvalue))
+            x = self.length * i / numCars
+            self._createCar(name, x, lane, carParams.copy())
 
             if laneSpread is True:
                 lane = (lane + 1) % self.numLanes
