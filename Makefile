@@ -4,11 +4,10 @@ cfg = $(PROJ).netccfg
 rou = $(PROJ).rou.xml
 nod = $(PROJ).nod.xml
 edg = $(PROJ).edg.xml
-emission_output = data/$(PROJ).emission.xml
 .PHONY: net clean sumo gui
 
 sumo:	$(net)
-	sumo -c $(PROJ).sumo.cfg --no-step-log --emission-output $(emission_output)
+	sumo -c $(PROJ).sumo.cfg --no-step-log
 
 gui:	$(net)
 	sumo-gui -c $(PROJ).sumo.cfg

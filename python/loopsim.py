@@ -101,8 +101,8 @@ class LoopSim:
             if accel is not None:
                 traci.vehicle.setAccel(name, accel)
             if carParams is not None:
-                for (name, value) in carParams.iteritems():
-                    traci.vehicle.setParameter(name, name, value)
+                for (pname, pvalue) in carParams.iteritems():
+                    traci.vehicle.setParameter(name, pname, repr(pvalue))
 
             if laneSpread:
                 lane = (lane + 1) % self.numLanes
@@ -188,7 +188,7 @@ if __name__ == "__main__":
             "accel"       :   2,
             "function"    : humanCarFn,
             "laneSpread"  : False,
-            #"lcSpeedGain" : 100,
+            "lcSpeedGain" : 100,
             }
 
     opts = {
