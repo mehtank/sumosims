@@ -144,7 +144,7 @@ class LoopSim:
                 car["edge"] = traci.vehicle.getRoadID(v)
                 car["position"] = traci.vehicle.getLanePosition(v)
                 car["lane"] = traci.vehicle.getLaneIndex(v)
-                car["x"] = self._getX(edge, position)
+                car["x"] = self._getX(car["edge"], car["position"])
                 car["v"] = traci.vehicle.getSpeed(v)
                 allCars[v] = car
 
@@ -219,10 +219,8 @@ if __name__ == "__main__":
     def ACCFn(v, humanCars=None, robotCars=None):
         # traci.vehicle.setTau(v, 0)
         li = traci.vehicle.getLaneIndex(v)
-        ((front_vID, front_dist), (back_vID, back_dist)) = headway(v, humanCars + robotCars, lane=li, length=c.LENGTH)
-        print (front_vID, front_dist), (back_vID, back_dist)
-        if random.random() > .99:
-            traci.vehicle.changeLane(v, 1-li, 1000)
+        # ((front_vID, front_dist), (back_vID, back_dist)) = headway(v, humanCars + robotCars, lane=li, length=c.LENGTH)
+        # print (front_vID, front_dist), (back_vID, back_dist)
 
     humanParams = {
             "count"       :  80,
