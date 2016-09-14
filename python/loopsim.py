@@ -82,6 +82,9 @@ class LoopSim:
                 startx = x-s
         return starte, startx
 
+    def _getX(self, edge, position):
+        return position + self.edgestarts[edge]
+
     def _createCar(self, name, x, lane, carParams):
         starte, startx = self._getEdge(x)
         maxSpeed = carParams.pop("maxSpeed", 30)
@@ -133,6 +136,16 @@ class LoopSim:
     def _run(self, simSteps, humanCarFn, robotCarFn):
         for step in range(simSteps):
             traci.simulationStep()
+            allCars = {}
+            for v in self.humanCars + self.robotCars:
+                car = {}
+                car["edge"] = traci.vehicle.getRoadID(v)
+                car["position"] = traci.vehicle.getLanePosition(v)
+                car["lane"] = traci.vehicle.getLaneIndex(v)
+                car["x"] = self._getX(edge, position)
+                car["v"] = traci.vehicle.getSpeed(v)
+                allCars[v] = car
+
             if humanCarFn is not None:
                 for v in self.humanCars:
                     humanCarFn(v)
