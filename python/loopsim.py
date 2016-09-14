@@ -255,7 +255,11 @@ if __name__ == "__main__":
 
         # traci.vehicle.setTau(v, 0)
         vehID = car["id"]
-        [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
+        try:
+            [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
+        except ValueError:
+            # Not enough cars on lane
+            return
 
         front_dist = (front_car["x"] - car["x"]) % sim.length
         back_dist = (car["x"] - back_car["x"]) % sim.length
@@ -298,7 +302,7 @@ if __name__ == "__main__":
             "humanParams": humanParams,
             "robotParams": robotParams,
             "simSteps"   : 500,
-            "tag"        : ".01-lane-change"
+            "tag"        : "ACCrobots"
             }
 
     sim = LoopSim("loopsim", length=1000, numLanes=1)
