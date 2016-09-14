@@ -84,30 +84,53 @@ class LoopSim:
                 startx = x-s
         return starte, startx
 
-    def _addCars(self, numCars, maxSpeed, accel, carParams, laneSpread, isRobot):
+    def _createCar(self, name, x, lane, carParams):
+        starte, startx = self._getEdge(x)
+        maxSpeed = carParams.pop("maxSpeed", 30)
+        accel = carParams.pop("accel", None)
+        laneSpread = carParams.pop("laneSpread", True)
+        if laneSpread is not True:
+            lane = laneSpread
+
+        traci.vehicle.addFull(name, "route"+starte)
+        traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
+        traci.vehicle.setMaxSpeed(name, maxSpeed)
+        if accel is not None:
+            traci.vehicle.setAccel(name, accel)
+        if carParams is not None:
+            for (pname, pvalue) in carParams.iteritems():
+                traci.vehicle.setParameter(name, pname, repr(pvalue))
+
+    def _addCars(self, humanParams, robotParams):
+        numHumanCars = humanParams.pop("count", 0)
+        numRobotCars = robotParams.pop("count", 0)
+        numCars = numHumanCars + numRobotCars
+
         # Add numCars cars to simulation
         lane = 0
+
+        humansLeft = numHumanCars
+        robotsLeft = numRobotCars
+
         for i in range(numCars):
-            if isRobot:
-                name = "robot%03d" % i
-                self.robotCars.append(name)
+            x = self.length * i / numCars
+            # evenly distribute robot cars and human cars
+            if (robotsLeft == 0 or 
+                (humansLeft > 0 and 
+                 ((humansLeft-1.0)/robotsLeft >= 1.0*numHumanCars/numRobotCars))):
+                    # add human car
+                    name = "human%03d" % i
+                    self.humanCars.append(name)
+                    self._createCar(name, x, lane, humanParams.copy())
+                    humansLeft -= 1
             else:
-                name = "human%03d" % i
-                self.humanCars.append(name)
+                    # add robot car
+                    name = "robot%03d" % i
+                    self.robotCars.append(name)
+                    self._createCar(name, x, lane, robotParams.copy())
+                    robotsLeft -= 1
 
-            starte, startx = self._getEdge(self.length * i / numCars)
-
-            traci.vehicle.addFull(name, "route"+starte)
-            traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
-            traci.vehicle.setMaxSpeed(name, maxSpeed)
-            if accel is not None:
-                traci.vehicle.setAccel(name, accel)
-            if carParams is not None:
-                for (pname, pvalue) in carParams.iteritems():
-                    traci.vehicle.setParameter(name, pname, repr(pvalue))
-
-            if laneSpread:
-                lane = (lane + 1) % self.numLanes
+            lane = (lane + 1) % self.numLanes
 
     def _run(self, simSteps, humanCarFn, robotCarFn):
         for step in range(simSteps):
@@ -129,18 +152,14 @@ class LoopSim:
         tag = opts.get("tag", None)
 
         humanParams = opts.get("humanParams", dict())
-        self.numHumans = humanParams.pop("count", 100)
-        humanMaxSpeed = humanParams.pop("maxSpeed", 30)
-        humanAccel = humanParams.pop("accel", None)
         humanCarFn = humanParams.pop("function", None)
-        humanSpread = humanParams.pop("laneSpread", False)
+        self.numHumans = humanParams.get("count", 100)
+        humanMaxSpeed = humanParams.get("maxSpeed", 30)
 
         robotParams = opts.get("robotParams", dict())
-        self.numRobots = robotParams.pop("count", 0)
-        robotMaxSpeed = robotParams.pop("maxSpeed", 30)
-        robotAccel = robotParams.pop("accel", None)
         robotCarFn = robotParams.pop("function", None)
-        robotSpread = robotParams.pop("laneSpread", False)
+        self.numRobots = robotParams.get("count", 0)
+        robotMaxSpeed = robotParams.get("maxSpeed", 30)
 
         simSteps = opts.get("simSteps", 500)
 
@@ -152,8 +171,7 @@ class LoopSim:
             self.label += "-" + tag
 
         self._simInit("-" + self.label)
-        self._addCars(self.numHumans, humanMaxSpeed, humanAccel, humanParams, humanSpread, isRobot=False)
-        self._addCars(self.numRobots, robotMaxSpeed, robotAccel, robotParams, robotSpread, isRobot=True)
+        self._addCars(humanParams, robotParams)
         self._run(simSteps, humanCarFn, robotCarFn)
 
     def plot(self, show=True, save=False):
@@ -198,14 +216,28 @@ if __name__ == "__main__":
             "maxSpeed"    :  30,
             "accel"       :   2,
             "function"    : ACCFn,
-            "laneSpread"  : False,
+            "laneSpread"  : 0,
             "lcSpeedGain" : 100,
+            }
+
+    def robotCarFn(v, humanCars, robotCars):
+        li = traci.vehicle.getLaneIndex(v)
+        if random.random() > .99:
+            traci.vehicle.changeLane(v, 1-li, 1000)
+
+    robotParams = {
+            "count"       :   7,
+            "maxSpeed"    :  30,
+            "accel"       :   2,
+            "function"    : robotCarFn,
+            "laneSpread"  : 0,
             }
 
     opts = {
             "humanParams": humanParams,
-            "simSteps"   :    500,
-            "tag"      : ".01-lane-change"
+            "robotParams": robotParams,
+            "simSteps"   : 500,
+            "tag"        : ".01-lane-change"
             }
 
     sim = LoopSim("loopsim", length=1000, numLanes=2)
