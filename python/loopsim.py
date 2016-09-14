@@ -82,7 +82,12 @@ class LoopSim:
                 startx = x-s
         return starte, startx
 
-    def _addCars(self, numCars, maxSpeed, accel, carParams, laneSpread, isRobot):
+    def _addCars(self, carParams, isRobot):
+        numCars = carParams.pop("count", 0)
+        maxSpeed = carParams.pop("maxSpeed", 30)
+        accel = carParams.pop("accel", None)
+        laneSpread = carParams.pop("laneSpread", False)
+
         # Add numCars cars to simulation
         if laneSpread is True:
             lane = 0
@@ -131,18 +136,14 @@ class LoopSim:
         tag = opts.get("tag", None)
 
         humanParams = opts.get("humanParams", dict())
-        self.numHumans = humanParams.pop("count", 100)
-        humanMaxSpeed = humanParams.pop("maxSpeed", 30)
-        humanAccel = humanParams.pop("accel", None)
         humanCarFn = humanParams.pop("function", None)
-        humanSpread = humanParams.pop("laneSpread", False)
+        self.numHumans = humanParams.get("count", 100)
+        humanMaxSpeed = humanParams.get("maxSpeed", 30)
 
         robotParams = opts.get("robotParams", dict())
-        self.numRobots = robotParams.pop("count", 0)
-        robotMaxSpeed = robotParams.pop("maxSpeed", 30)
-        robotAccel = robotParams.pop("accel", None)
         robotCarFn = robotParams.pop("function", None)
-        robotSpread = robotParams.pop("laneSpread", False)
+        self.numRobots = robotParams.get("count", 0)
+        robotMaxSpeed = robotParams.get("maxSpeed", 30)
 
         simSteps = opts.get("simSteps", 500)
 
@@ -154,8 +155,8 @@ class LoopSim:
             self.label += "-" + tag
 
         self._simInit("-" + self.label)
-        self._addCars(self.numHumans, humanMaxSpeed, humanAccel, humanParams, humanSpread, isRobot=False)
-        self._addCars(self.numRobots, robotMaxSpeed, robotAccel, robotParams, robotSpread, isRobot=True)
+        self._addCars(humanParams, isRobot=False)
+        self._addCars(robotParams, isRobot=True)
         self._run(simSteps, humanCarFn, robotCarFn)
 
     def plot(self, show=True, save=False):
