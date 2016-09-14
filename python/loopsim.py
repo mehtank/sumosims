@@ -8,9 +8,11 @@ from sumolib import checkBinary
 import traci
 import traci.constants as tc
 
+import config as c
 from makecirc import makecirc, makenet
 from parsexml import parsexml
 from plots import pcolor, pcolor_multi
+from util import headway
 
 
 # the port used for communicating with your sumo instance
@@ -135,10 +137,10 @@ class LoopSim:
             traci.simulationStep()
             if humanCarFn is not None:
                 for v in self.humanCars:
-                    humanCarFn(v)
+                    humanCarFn(v, robotCars=self.robotCars, humanCars=self.humanCars)
             if robotCarFn is not None:
                 for v in self.robotCars:
-                    robotCarFn(v)
+                    robotCarFn(v, robotCars=self.robotCars, humanCars=self.humanCars)
 
         traci.close()
         sys.stdout.flush()
@@ -195,8 +197,17 @@ class LoopSim:
 if __name__ == "__main__":
     import random
 
-    def humanCarFn(v):
+    def randomChangeLaneFn(v, humanCars=None, robotCars=None):
         li = traci.vehicle.getLaneIndex(v)
+        if random.random() > .99:
+            traci.vehicle.changeLane(v, 1-li, 1000)
+
+
+    def ACCFn(v, humanCars=None, robotCars=None):
+        # traci.vehicle.setTau(v, 0)
+        li = traci.vehicle.getLaneIndex(v)
+        ((front_vID, front_dist), (back_vID, back_dist)) = headway(v, humanCars + robotCars, lane=li, length=c.LENGTH)
+        print (front_vID, front_dist), (back_vID, back_dist)
         if random.random() > .99:
             traci.vehicle.changeLane(v, 1-li, 1000)
 
@@ -204,7 +215,7 @@ if __name__ == "__main__":
             "count"       :  80,
             "maxSpeed"    :  30,
             "accel"       :   2,
-            "function"    : humanCarFn,
+            "function"    : ACCFn,
             "laneSpread"  : 0,
             "lcSpeedGain" : 100,
             }
