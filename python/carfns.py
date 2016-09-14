@@ -71,7 +71,7 @@ def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01, beta = 0.5):
         # traci.vehicle.setTau(vehID, 0.01)
 
         if step < sim.simSteps/2:
-            changeFasterLaneBuilder()((idx, car), sim, step)
+            # changeFasterLaneBuilder()((idx, car), sim, step)
             return
 
         try:
@@ -127,7 +127,7 @@ def MidpointFnBuilder(max_speed = 26.8, gain = 0.1, beta = 0.5, duration = 500, 
         vehID = car["id"]
 
         if step < sim.simSteps/2:
-            changeFasterLaneBuilder()((idx, car), sim, step)
+            # changeFasterLaneBuilder()((idx, car), sim, step)
             return
 
         try:
