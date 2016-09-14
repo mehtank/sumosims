@@ -142,9 +142,9 @@ class LoopSim:
             for v in self.humanCars + self.robotCars:
                 car = {}
                 car["edge"] = traci.vehicle.getRoadID(v)
-                car["position"] = traci.vehicle.getLanePosition(v)
+                position = traci.vehicle.getLanePosition(v)
                 car["lane"] = traci.vehicle.getLaneIndex(v)
-                car["x"] = self._getX(car["edge"], car["position"])
+                car["x"] = self._getX(car["edge"], position)
                 car["v"] = traci.vehicle.getSpeed(v)
                 allCars[v] = car
 
