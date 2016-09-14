@@ -220,7 +220,7 @@ if __name__ == "__main__":
             "lcSpeedGain" : 100,
             }
 
-    def robotCarFn(v):
+    def robotCarFn(v, humanCars, robotCars):
         li = traci.vehicle.getLaneIndex(v)
         if random.random() > .99:
             traci.vehicle.changeLane(v, 1-li, 1000)
