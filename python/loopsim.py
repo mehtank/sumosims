@@ -228,36 +228,38 @@ class LoopSim:
 
 # this is the main entry point of this script
 if __name__ == "__main__":
-    from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder
+    from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder, MidpointFnBuilder
 
     humanParams = {
             "name"        : "human",
-            "count"       :  40,
+            "count"       :  30,
             "maxSpeed"    :  40,
             "accel"       :   4,
             "decel"       :   6,
-            #"function"    : changeFasterLaneBuilder(),
+            "function"    : changeFasterLaneBuilder(),
             "laneSpread"  : 0,
             "speedFactor" : 1.0,
             "speedDev"    : 0.1,
             "sigma"       : 0.5,
-            "tau"         : 1,
+            "tau"         : 2,
             }
 
     robotParams = {
             "name"        : "robot",
-            "count"       :   0,
+            "count"       :   10,
             "maxSpeed"    :  40,
             "accel"       :   4,
             "decel"       :   6,
-            #"function"    : ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1),
+            "function"    : MidpointFnBuilder(max_speed = 26.8, gain = 0.1),
+            # "function"    : ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1),
             "laneSpread"  : 0,
+            "tau"         : 1,
             }
 
     opts = {
             "paramsList" : [humanParams, robotParams],
             "simSteps"   : 500,
-            "tag"        : "laneChange"
+            "tag"        : "Midpoint"
             }
 
     defaults.SIM_STEP_LENGTH = 0.5
