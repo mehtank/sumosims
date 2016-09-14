@@ -87,7 +87,8 @@ def pcolor_multi(title, (xrng, xlabel),
         axarr[-1].plot(yrng, ts, label="lane %s" % sid)
 
     axarr[-1].set_ylabel("Average loop speed (m/s)")
-    axarr[-1].legend()
+    axarr[-1].legend(bbox_to_anchor=(0., 1.02, 1., .051), loc=3,
+                       ncol=numlanes, mode="expand", borderaxespad=0.)
     axarr[-1].set_xlabel(ylabel)
     fig.text(0.5, 0.975, title, 
             horizontalalignment='center', verticalalignment='top')
