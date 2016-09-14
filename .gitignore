@@ -1,2 +1,4 @@
 *.net.xml
 *.pyc
+*.cfg
+*.xml
