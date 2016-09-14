@@ -241,7 +241,7 @@ if __name__ == "__main__":
 
     def randomChangeLaneFn((idx, car), sim, step):
         li = car["lane"]
-        if random.random() > .99:
+        if random.random() > 99:
             traci.vehicle.changeLane(car["id"], 1-li, 1000)
 
     def ACCFn((idx, car), sim, step):
@@ -251,10 +251,10 @@ if __name__ == "__main__":
         front_dist = (front_car["x"] - car["x"]) % sim.length
         back_vID = back_car["id"]
         back_dist = (car["x"] - back_car["x"]) % sim.length
-        print (front_vID, front_dist), (back_vID, back_dist)
+        # print (front_vID, front_dist), (back_vID, back_dist)
 
     humanParams = {
-            "count"       :  80,
+            "count"       :  40,
             "maxSpeed"    :  30,
             "accel"       :   2,
             "function"    : randomChangeLaneFn,
@@ -277,6 +277,6 @@ if __name__ == "__main__":
             "tag"        : ".01-lane-change"
             }
 
-    sim = LoopSim("loopsim", length=1000, numLanes=2)
+    sim = LoopSim("loopsim", length=1000, numLanes=1)
     sim.simulate(opts)
     sim.plot(show=True, save=True)
