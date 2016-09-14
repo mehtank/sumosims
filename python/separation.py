@@ -6,32 +6,27 @@ from sumolib import checkBinary
 import traci
 import traci.constants as tc
 
-# the port used for communicating with your sumo instance
-PORT = 8873
+import config as c
 
-
-length = 1000
-l4 = length/4.
-edgestarts = {"bottom": 0, "right": l4, "top": 2*l4, "left": 3*l4}
 
 vehID = "robot"
 
 def run():
     """execute the TraCI control loop"""
-    traci.init(PORT)
+    traci.init(c.PORT)
     traci.vehicle.subscribe(vehID, (tc.VAR_ROAD_ID, tc.VAR_LANEPOSITION))
     for step in range(40):
         traci.simulationStep()
 
         res = traci.vehicle.getSubscriptionResults(vehID)
-        myx = res[tc.VAR_LANEPOSITION] + edgestarts[res[tc.VAR_ROAD_ID]]
+        myx = res[tc.VAR_LANEPOSITION] + c.EDGESTARTS[res[tc.VAR_ROAD_ID]]
 
         alldiff = {}
-        for (e, s) in edgestarts.items():
+        for (e, s) in c.EDGESTARTS.items():
             allv = traci.edge.getLastStepVehicleIDs(e)
             for v in allv:
                 if v != vehID:
-                    alldiff[v] = (s + traci.vehicle.getLanePosition(v) - myx) % length
+                    alldiff[v] = (s + traci.vehicle.getLanePosition(v) - myx) % c.LENGTH
         mn = min(alldiff, key=alldiff.get)
         mx = max(alldiff, key=alldiff.get)
 
@@ -39,7 +34,7 @@ def run():
             print "Step %d :: " % step, 
             print "  robot @ %6.2fm, " % myx,
             print mn, " ahead @ %6.2fm, " % alldiff[mn], 
-            print mx, " behind @ %6.2fm." % (length-alldiff[mx])
+            print mx, " behind @ %6.2fm." % (c.LENGTH-alldiff[mx])
     traci.close()
     sys.stdout.flush()
 
@@ -51,7 +46,7 @@ if __name__ == "__main__":
             sumoBinary, 
             "--no-step-log",
             "-c", "circular.sumo.cfg", 
-            "--remote-port", str(PORT)], 
+            "--remote-port", str(c.PORT)],
         stdout=sys.stdout, stderr=sys.stderr)
     run()
     sumoProcess.wait()
