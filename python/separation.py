@@ -7,8 +7,6 @@ import traci
 import traci.constants as tc
 
 import config as c
-# the port used for communicating with your sumo instance
-
 
 
 vehID = "robot"

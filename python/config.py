@@ -1,4 +1,5 @@
 
+# the port used for communicating with your sumo instance
 PORT = 8873
 
 LENGTH = 1000
