@@ -72,6 +72,7 @@ class LoopSim:
         sumoBinary = checkBinary('sumo')
         self.sumoProcess = subprocess.Popen([
                 sumoBinary, 
+                "--step-length", repr(defaults.SIM_STEP_LENGTH),
                 "--no-step-log",
                 "-c", self.cfgfn,
                 "--remote-port", str(self.port)], 
@@ -259,6 +260,7 @@ if __name__ == "__main__":
             "tag"        : "laneChange"
             }
 
+    defaults.SIM_STEP_LENGTH = 0.5
     sim = LoopSim("loopsim", length=1000, numLanes=2)
     sim.simulate(opts)
     sim.plot(show=True, save=True)
