@@ -1,4 +1,4 @@
-from numpy import mgrid, array
+from numpy import meshgrid, array
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
@@ -42,7 +42,8 @@ def pcolor(title, (xrng, xlabel),
 
     #y, x = mgrid[yrng, xrng]
     #cax = ax.pcolor(x, y, s, 
-    cax = ax.pcolormesh(array(s),
+    x, y = meshgrid(xrng, yrng)
+    cax = ax.pcolormesh(x, y, array(s),
             vmin=smin, vmax=smax, 
             cmap=my_cmap)
     ax.set_title(title)
@@ -68,10 +69,11 @@ def pcolor_multi(title, (xrng, xlabel),
     else:
         fig, ax = plt.subplots()
         axarr = [ax]
+    x, y = meshgrid(xrng, yrng)
 
     for (ax, sid) in zip(axarr, sorted(sdict)):
         s = sdict[sid]
-        cax = ax.pcolormesh(array(s),
+        cax = ax.pcolormesh(x, y, array(s),
                 vmin=smin, vmax=smax, 
                 cmap=my_cmap)
         ax.set_title("lane %s" % repr(sid))
