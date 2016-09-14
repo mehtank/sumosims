@@ -84,6 +84,9 @@ class LoopSim:
                 startx = x-s
         return starte, startx
 
+    def _getX(self, edge, position):
+        return position + self.edgestarts[edge]
+
     def _createCar(self, name, x, lane, carParams):
         starte, startx = self._getEdge(x)
         maxSpeed = carParams.pop("maxSpeed", 30)
@@ -135,6 +138,16 @@ class LoopSim:
     def _run(self, simSteps, humanCarFn, robotCarFn):
         for step in range(simSteps):
             traci.simulationStep()
+            allCars = {}
+            for v in self.humanCars + self.robotCars:
+                car = {}
+                car["edge"] = traci.vehicle.getRoadID(v)
+                position = traci.vehicle.getLanePosition(v)
+                car["lane"] = traci.vehicle.getLaneIndex(v)
+                car["x"] = self._getX(car["edge"], position)
+                car["v"] = traci.vehicle.getSpeed(v)
+                allCars[v] = car
+
             if humanCarFn is not None:
                 for v in self.humanCars:
                     humanCarFn(v, robotCars=self.robotCars, humanCars=self.humanCars)
@@ -206,10 +219,8 @@ if __name__ == "__main__":
     def ACCFn(v, humanCars=None, robotCars=None):
         # traci.vehicle.setTau(v, 0)
         li = traci.vehicle.getLaneIndex(v)
-        ((front_vID, front_dist), (back_vID, back_dist)) = headway(v, humanCars + robotCars, lane=li, length=c.LENGTH)
-        print (front_vID, front_dist), (back_vID, back_dist)
-        if random.random() > .99:
-            traci.vehicle.changeLane(v, 1-li, 1000)
+        # ((front_vID, front_dist), (back_vID, back_dist)) = headway(v, humanCars + robotCars, lane=li, length=c.LENGTH)
+        # print (front_vID, front_dist), (back_vID, back_dist)
 
     humanParams = {
             "count"       :  80,
