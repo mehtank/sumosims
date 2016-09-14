@@ -1,4 +1,5 @@
-from numpy import meshgrid, array
+from numpy import meshgrid, array, linspace, diff, sum
+from numpy import transpose as T
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
@@ -64,32 +65,37 @@ def pcolor_multi(title, (xrng, xlabel),
                   (yrng, ylabel), 
                   (sdict, smin, smax, slabel)):
 
-    if len(sdict) > 1:
-        fig, axarr = plt.subplots(1, len(sdict), sharey=True)
-    else:
-        fig, ax = plt.subplots()
-        axarr = [ax]
+    numlanes = len(sdict)
+
+    fig, axarr = plt.subplots(numlanes+1, sharex=True, figsize=(6, 8), dpi=128)
+
     x, y = meshgrid(xrng, yrng)
 
     for (ax, sid) in zip(axarr, sorted(sdict)):
-        s = sdict[sid]
-        cax = ax.pcolormesh(x, y, array(s),
+        tv = T(array(sdict[sid]))
+        cax = ax.pcolormesh(T(y), T(x), tv,
                 vmin=smin, vmax=smax, 
                 cmap=my_cmap)
-        ax.set_title("lane %s" % repr(sid))
+        ax.set_title("lane %s" % sid)
+        ax.set_ylabel(xlabel)
         ax.axis('tight')
 
-    axarr[0].set_ylabel(ylabel)
-    axarr[0].invert_yaxis()
+        dx = T(diff(x))
+        # throws out last velocity
+        dt = dx * 1./tv[:-1,:]
+        ts = sum(diff(xrng))/sum(dt, axis=0)
+        axarr[-1].plot(yrng, ts, label="lane %s" % sid)
+
+    axarr[-1].set_ylabel("Average loop speed (m/s)")
+    axarr[-1].legend()
+    axarr[-1].set_xlabel(ylabel)
     fig.text(0.5, 0.975, title, 
             horizontalalignment='center', verticalalignment='top')
-    fig.text(0.5, 0.025, xlabel, 
-            horizontalalignment='center', verticalalignment='bottom')
     # Add colorbar
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.84, 0.1, 0.02, 0.8])
 
-    ticks = [smin, (smin+smax)/2, smax]
+    ticks = linspace(smin, smax, 6)
     cbar = fig.colorbar(cax, cax=cbar_ax, ticks=ticks)
     cbar.ax.set_yticklabels(ticks)  # vertically oriented colorbar
     cbar.ax.set_ylabel(slabel, rotation=270, labelpad=20)
