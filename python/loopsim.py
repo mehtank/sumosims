@@ -8,18 +8,21 @@ from sumolib import checkBinary
 import traci
 import traci.constants as tc
 
-import config as c
+import config as defaults
 from makecirc import makecirc, makenet
 from parsexml import parsexml
 from plots import pcolor, pcolor_multi
 
 
-# the port used for communicating with your sumo instance
-PORT = 8873
-
-NET_PATH = "net/"
-IMG_PATH = "img/"
-DATA_PATH = "data/"
+KNOWN_PARAMS = {
+        "maxSpeed"      : traci.vehicle.setMaxSpeed,
+        "accel"         : traci.vehicle.setAccel,
+        "decel"         : traci.vehicle.setAccel,
+        "sigma"         : traci.vehicle.setImperfection,
+        "tau"           : traci.vehicle.setTau,
+        "speedFactor"   : traci.vehicle.setSpeedFactor,
+        "speedDev"      : traci.vehicle.setSpeedDeviation,
+        }
 
 def ensure_dir(path):
     try:
@@ -31,7 +34,8 @@ def ensure_dir(path):
 
 class LoopSim:
 
-    def __init__(self, name, length, numLanes, port=PORT):
+    def __init__(self, name, length, numLanes, 
+            maxSpeed=defaults.SPEED_LIMIT, port=defaults.PORT):
         self.name = "%s-%dm%dl" % (name, length, numLanes)
         self.length = length
         self.numLanes = numLanes
@@ -47,19 +51,20 @@ class LoopSim:
         self.netfn = makenet(self.name, 
                 length=self.length, 
                 lanes=self.numLanes,
+                maxSpeed=maxSpeed,
                 path=self.net_path)
         self.port = port
 
     def _mkdirs(self, name):
-        self.net_path = ensure_dir("%s" % NET_PATH)
-        self.data_path = ensure_dir("%s" % DATA_PATH)
-        self.img_path = ensure_dir("%s" % IMG_PATH)
+        self.net_path = ensure_dir("%s" % defaults.NET_PATH)
+        self.data_path = ensure_dir("%s" % defaults.DATA_PATH)
+        self.img_path = ensure_dir("%s" % defaults.IMG_PATH)
 
     def _simInit(self, suffix):
         self.cfgfn, self.outs = makecirc(self.name+suffix, 
                 netfn=self.netfn, 
                 numcars=0, 
-                dataprefix = DATA_PATH)
+                dataprefix = defaults.DATA_PATH)
 
         # Start simulator
         sumoBinary = checkBinary('sumo')
@@ -67,7 +72,7 @@ class LoopSim:
                 sumoBinary, 
                 "--no-step-log",
                 "-c", self.cfgfn,
-                "--remote-port", str(PORT)], 
+                "--remote-port", str(self.port)], 
             stdout=sys.stdout, stderr=sys.stderr)
 
         # Initialize TraCI
@@ -88,20 +93,20 @@ class LoopSim:
 
     def _createCar(self, name, x, lane, carParams):
         starte, startx = self._getEdge(x)
-        maxSpeed = carParams.pop("maxSpeed", 30)
-        accel = carParams.pop("accel", None)
+
         laneSpread = carParams.pop("laneSpread", True)
         if laneSpread is not True:
             lane = laneSpread
 
         traci.vehicle.addFull(name, "route"+starte)
         traci.vehicle.moveTo(name, starte + "_" + repr(lane), startx)
-        traci.vehicle.setMaxSpeed(name, maxSpeed)
-        if accel is not None:
-            traci.vehicle.setAccel(name, accel)
+
         if carParams is not None:
             for (pname, pvalue) in carParams.iteritems():
-                traci.vehicle.setParameter(name, pname, repr(pvalue))
+                if pname in KNOWN_PARAMS:
+                    KNOWN_PARAMS[pname](name, pvalue)
+                else:
+                    traci.vehicle.setParameter(name, pname, repr(pvalue))
 
     def _addCars(self, humanParams, robotParams):
         numHumanCars = humanParams.pop("count", 0)
@@ -232,85 +237,29 @@ class LoopSim:
         if show:
             plt.show()
         if save:
-            fig.savefig(IMG_PATH + self.name + "-" + self.label + ".png")
+            fig.savefig(defaults.IMG_PATH + self.name + "-" + self.label + ".png")
         return plt
 
 # this is the main entry point of this script
 if __name__ == "__main__":
-    import random
-
-    def randomChangeLaneFn((idx, car), sim, step):
-        li = car["lane"]
-        if random.random() > .99:
-            traci.vehicle.changeLane(car["id"], 1-li, 1000)
-
-    def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1):
-        """
-        Basic adaptive cruise control (ACC) controller
-        :param follow_sec:
-        :param max_speed: 26.8 m/s = 60 mph
-        :param gain:
-        :return: ACCFn to input to a carParams
-        """
-
-        def ACCFn((idx, car), sim, step):
-            """
-            :param idx:
-            :param car:
-            :param sim:
-            :param step:
-            :return:
-            """
-            vehID = car["id"]
-
-            # TODO(cathywu) Setting tau to any value seems to cause collisions
-            # traci.vehicle.setTau(vehID, 0.01)
-
-            if step < 250:
-                return
-
-            try:
-                [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
-            except ValueError:
-                # Not enough cars on lane
-                return
-
-            front_dist = (front_car["x"] - car["x"]) % sim.length
-            back_dist = (car["x"] - back_car["x"]) % sim.length
-
-            curr_speed = car["v"]
-            front_speed = front_car["v"]
-            follow_dist = front_speed*follow_sec
-            delta = front_dist - follow_dist
-            # print delta, curr_speed, front_speed, curr_speed-front_speed
-            if follow_dist < front_dist and curr_speed < max_speed:
-                # speed up
-                new_speed = min(curr_speed + gain * delta, max_speed)
-                traci.vehicle.slowDown(vehID, new_speed, 1000) # 2.5 sec
-                # print curr_speed, new_speed, front_speed, delta, front_dist, follow_dist
-            elif follow_dist > front_dist:
-                # slow down
-                new_speed = max(curr_speed + gain * delta, 0)
-                traci.vehicle.slowDown(vehID, new_speed, 1000) # 2.5 sec
-            # print curr_speed, new_speed, front_speed, delta, front_dist, follow_dist
-            # print (front_vID, front_dist), (back_vID, back_dist)
-
-        return ACCFn
+    from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder
 
     humanParams = {
-            "count"       :  0,
-            "maxSpeed"    :  30,
-            "accel"       :   2,
-            "function"    : randomChangeLaneFn,
+            "count"       :  40,
+            "maxSpeed"    :  40,
+            "accel"       :   4,
+            "decel"       :   6,
+            #"function"    : changeFasterLaneBuilder(),
             "laneSpread"  : 0,
             "lcSpeedGain" : 100,
             }
 
     robotParams = {
-            "count"       :  40,
-            "maxSpeed"    :  30,
-            "accel"       :   2,
-            "function"    : ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1),
+            "count"       :   0,
+            "maxSpeed"    :  40,
+            "accel"       :   4,
+            "decel"       :   6,
+            #"function"    : ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1),
             "laneSpread"  : 0,
             }
 
@@ -318,9 +267,9 @@ if __name__ == "__main__":
             "humanParams": humanParams,
             "robotParams": robotParams,
             "simSteps"   : 500,
-            "tag"        : "ACCrobots"
+            "tag"        : "laneChange"
             }
 
-    sim = LoopSim("loopsim", length=1000, numLanes=1)
+    sim = LoopSim("loopsim", length=1000, numLanes=2)
     sim.simulate(opts)
     sim.plot(show=True, save=True)
