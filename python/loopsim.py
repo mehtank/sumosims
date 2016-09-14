@@ -12,7 +12,6 @@ import config as c
 from makecirc import makecirc, makenet
 from parsexml import parsexml
 from plots import pcolor, pcolor_multi
-from util import headway
 
 
 # the port used for communicating with your sumo instance
@@ -138,26 +137,54 @@ class LoopSim:
     def _run(self, simSteps, humanCarFn, robotCarFn):
         for step in range(simSteps):
             traci.simulationStep()
-            allCars = {}
+            self.allCars = []
             for v in self.humanCars + self.robotCars:
                 car = {}
+                car["id"] = v
                 car["edge"] = traci.vehicle.getRoadID(v)
                 position = traci.vehicle.getLanePosition(v)
                 car["lane"] = traci.vehicle.getLaneIndex(v)
                 car["x"] = self._getX(car["edge"], position)
                 car["v"] = traci.vehicle.getSpeed(v)
-                allCars[v] = car
+                self.allCars.append(car)
+            self.allCars.sort(key=lambda x: x["x"])
 
-            if humanCarFn is not None:
-                for v in self.humanCars:
-                    humanCarFn(v, self, allCars)
-            if robotCarFn is not None:
-                for v in self.robotCars:
-                    robotCarFn(v, self, allCars)
+            for (idx, car) in enumerate(self.allCars):
+                if humanCarFn is not None and car["id"] in self.humanCars:
+                    humanCarFn((idx, car), self, step)
+                elif robotCarFn is not None and car["id"] in self.robotCars:
+                    robotCarFn((idx, car), self, step)
 
         traci.close()
         sys.stdout.flush()
         self.sumoProcess.wait()
+
+    def getCars(self, idx, numBack = None, numForward = None, 
+                           dxBack = None, dxForward = None,
+                           lane = None):
+        ret = []
+        x = self.allCars[idx]["x"]
+
+        for i in range(idx-1, -1, -1) + range(self.numCars-1, idx, -1):
+            c = self.allCars[i]
+            if (dxBack is not None and (x - c["x"]) % self.length > dxBack) or \
+               (numBack is not None and len(ret) >= numBack):
+                    break
+            if (lane is None or c["lane"] == lane):
+                    ret.insert(0, c)
+
+        cnt = len(ret)
+
+        for i in range(idx+1, self.numCars) + range(0, idx):
+            c = self.allCars[i]
+            if (dxForward is not None and (c["x"]-x) % self.length > dxForward) or \
+               (numForward is not None and (len(ret) - cnt) >= numForward):
+                    break
+            if (lane is None or c["lane"] == lane):
+                    ret.append(c)
+
+        return ret
+
 
     def simulate(self, opts):
 
@@ -173,6 +200,8 @@ class LoopSim:
         robotCarFn = robotParams.pop("function", None)
         self.numRobots = robotParams.get("count", 0)
         robotMaxSpeed = robotParams.get("maxSpeed", 30)
+
+        self.numCars = self.numHumans+self.numRobots
 
         simSteps = opts.get("simSteps", 500)
 
@@ -210,16 +239,18 @@ class LoopSim:
 if __name__ == "__main__":
     import random
 
-    def randomChangeLaneFn(v, sim, allCars):
-        li = allCars[v]["lane"]
+    def randomChangeLaneFn((idx, car), sim, step):
+        li = car["lane"]
         if random.random() > .99:
-            traci.vehicle.changeLane(v, 1-li, 1000)
+            traci.vehicle.changeLane(car["id"], 1-li, 1000)
 
-
-    def ACCFn(v, sim, allCars):
+    def ACCFn((idx, car), sim, step):
         # traci.vehicle.setTau(v, 0)
-        li = allCars[v]["lane"]
-        ((front_vID, front_dist), (back_vID, back_dist)) = headway(v, allCars, sim.length)
+        [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
+        front_vID = front_car["id"]
+        front_dist = (front_car["x"] - car["x"]) % sim.length
+        back_vID = back_car["id"]
+        back_dist = (car["x"] - back_car["x"]) % sim.length
         print (front_vID, front_dist), (back_vID, back_dist)
 
     humanParams = {
