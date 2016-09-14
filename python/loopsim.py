@@ -196,10 +196,24 @@ if __name__ == "__main__":
             "lcSpeedGain" : 100,
             }
 
+    def robotCarFn(v):
+        li = traci.vehicle.getLaneIndex(v)
+        if random.random() > .99:
+            traci.vehicle.changeLane(v, 1-li, 1000)
+
+    robotParams = {
+            "count"       :   1,
+            "maxSpeed"    :  30,
+            "accel"       :   2,
+            "function"    : robotCarFn,
+            "laneSpread"  : 0,
+            }
+
     opts = {
             "humanParams": humanParams,
-            "simSteps"   :    500,
-            "tag"      : ".01-lane-change"
+            "robotParams": robotParams,
+            "simSteps"   : 500,
+            "tag"        : ".01-lane-change"
             }
 
     sim = LoopSim("loopsim", length=1000, numLanes=2)
