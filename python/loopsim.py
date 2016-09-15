@@ -37,7 +37,7 @@ def ensure_dir(path):
 class LoopSim:
 
     def __init__(self, name, length, numLanes, 
-            maxSpeed=defaults.SPEED_LIMIT, port=defaults.PORT):
+            speedLimit=defaults.SPEED_LIMIT, port=defaults.PORT):
         self.name = "%s-%dm%dl" % (name, length, numLanes)
         self.length = length
         self.numLanes = numLanes
@@ -53,7 +53,7 @@ class LoopSim:
         self.netfn = makenet(self.name, 
                 length=self.length, 
                 lanes=self.numLanes,
-                maxSpeed=maxSpeed,
+                speedLimit=speedLimit,
                 path=self.net_path)
         self.port = port
 
