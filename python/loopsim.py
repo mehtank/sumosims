@@ -236,7 +236,7 @@ class LoopSim:
 
 # this is the main entry point of this script
 if __name__ == "__main__":
-    from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder, MidpointFnBuilder, SwitchFn
+    from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder, MidpointFnBuilder, SwitchVTypeFn
 
     humanParams = {
             "name"        : "human",
@@ -269,7 +269,7 @@ if __name__ == "__main__":
     hybridParams = copy.copy(humanParams)
     hybridParams["name"] = "hybrid"
     hybridParams["count"] = 30
-    hybridParams["function"] = SwitchFn("robot", 0.5, initCarFn=randomChangeLaneFn)
+    hybridParams["function"] = SwitchVTypeFn("robot", 0.5, initCarFn=randomChangeLaneFn)
 
     opts = {
             "paramsList" : [humanParams, robotParams, hybridParams],
