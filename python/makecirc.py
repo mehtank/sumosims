@@ -1,5 +1,7 @@
 from lxml import etree
 
+import config as defaults
+
 
 E = etree.Element
 
@@ -13,7 +15,7 @@ def makexml(name, nsl):
 def printxml(t, fn):
     etree.ElementTree(t).write(fn, pretty_print=True, encoding='UTF-8', xml_declaration=True) 
 
-def makenet(base, length, lanes, maxSpeed=40, path=""):
+def makenet(base, length, lanes, speedLimit=defaults.SPEED_LIMIT, path=""):
     import subprocess
     import sys
 
@@ -41,7 +43,7 @@ def makenet(base, length, lanes, maxSpeed=40, path=""):
     printxml(x, path+edgfn)
 
     x = makexml("types", "http://sumo.dlr.de/xsd/types_file.xsd")
-    x.append(E("type", id="edgeType",  numLanes=repr(lanes), speed=repr(maxSpeed)))
+    x.append(E("type", id="edgeType",  numLanes=repr(lanes), speed=repr(speedLimit)))
     printxml(x, path+typfn)
 
     x = makexml("configuration", "http://sumo.dlr.de/xsd/netconvertConfiguration.xsd")
@@ -158,5 +160,5 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=0, typelist=None, maxt=3000,
 if __name__ == "__main__":
     base = "circtest"
     netfn = makenet(base, length=1000, lanes=3)
-    cfgfn, outs = makecirc(base, netfn=netfn, maxspeed=30, typelist=["human", "robot"], maxt=3000)
+    cfgfn, outs = makecirc(base, netfn=netfn, speedlimit=30, typelist=["human", "robot"], maxt=3000)
     print cfgfn
