@@ -47,18 +47,18 @@ def changeFasterLaneBuilder(speedThreshold = 5, likelihood = 0.5,
             traci.vehicle.changeLane(car["id"], maxl, 10000)
     return carFn
 
-def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01):
+def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01, beta = 0.5):
     """
     Basic adaptive cruise control (ACC) controller
-    :param follow_sec:
+    :param follow_sec: number of seconds worth of following distance to keep from the front vehicle
     :param max_speed: 26.8 m/s = 60 mph
-    :param gain:
+    :param gain: gain for tracking following distance
+    :param beta: gain for tracking speed of front vehicle
     :return: ACCFn to input to a carParams
     """
 
     def ACCFn((idx, car), sim, step):
         """
-        P controller
         :param idx:
         :param car:
         :param sim:
@@ -70,7 +70,8 @@ def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01):
         # TODO(cathywu) Setting tau to any value seems to cause collisions
         # traci.vehicle.setTau(vehID, 0.01)
 
-        if step < 250:
+        if step < sim.simSteps/2:
+            # changeFasterLaneBuilder()((idx, car), sim, step)
             return
 
         try:
@@ -89,24 +90,30 @@ def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01):
         # print delta, curr_speed, front_speed, curr_speed-front_speed
         if follow_dist < front_dist and curr_speed < max_speed:
             # speed up
-            new_speed = min(curr_speed + gain * delta, max_speed)
+            new_speed = min(curr_speed + beta * (front_speed-curr_speed) + gain * delta, max_speed)
             traci.vehicle.slowDown(vehID, new_speed, 1000) # 2.5 sec
-            print step, "FASTER", curr_speed, new_speed, front_speed, delta, front_dist, follow_dist
+            print "t=%d, FASTER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
+                  (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
         elif follow_dist > front_dist:
             # slow down
-            new_speed = max(curr_speed + gain * delta, 0)
+            new_speed = max(curr_speed + beta * (front_speed-curr_speed) + gain * delta, 0)
             traci.vehicle.slowDown(vehID, new_speed, 1000) # 2.5 sec
-            print step, "SLOWER", curr_speed, new_speed, front_speed, delta, front_dist, follow_dist
+            print "t=%d, SLOWER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
+                  (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
 
     return ACCFn
 
-def MidpointFnBuilder(max_speed = 26.8, gain = 0.01):
+def MidpointFnBuilder(max_speed = 26.8, gain = 0.1, beta = 0.5, duration = 500, bias = 1.0, ratio = 0.5):
     """
     Basic adaptive cruise control (ACC) controller
-    :param follow_sec:
     :param max_speed: 26.8 m/s = 60 mph
-    :param gain:
-    :return: ACCFn to input to a carParams
+    :param gain: gain for tracking following distance
+    :param beta: gain for tracking speed of front vehicle
+    :param duration: duration for transitioning to new speed (ms)
+    :param bias: additive speed bias term (m/s)
+    :param ratio: ratio of distance between front and back vehicles to track
+            as following distance (default is 0.5=midpoint)
+    :return: MidpointFn as input to a carParams
     """
 
     def MidpointFn((idx, car), sim, step):
@@ -119,7 +126,8 @@ def MidpointFnBuilder(max_speed = 26.8, gain = 0.01):
         """
         vehID = car["id"]
 
-        if step < 250:
+        if step < sim.simSteps/2:
+            # changeFasterLaneBuilder()((idx, car), sim, step)
             return
 
         try:
@@ -133,18 +141,20 @@ def MidpointFnBuilder(max_speed = 26.8, gain = 0.01):
 
         curr_speed = car["v"]
         front_speed = front_car["v"]
-        follow_dist = (front_dist + back_dist)/2
+        follow_dist = (front_dist + back_dist) * ratio
         delta = front_dist - follow_dist
         # print delta, curr_speed, front_speed, curr_speed-front_speed
         if follow_dist < front_dist and curr_speed < max_speed:
             # speed up
-            new_speed = min(curr_speed + gain * delta, max_speed)
-            traci.vehicle.slowDown(vehID, new_speed, 1000) # 2.5 sec
-            print step, "FASTER", curr_speed, new_speed, front_speed, delta, front_dist, follow_dist
+            new_speed = min(curr_speed + beta * (front_speed-curr_speed) + gain * delta + bias, max_speed)
+            traci.vehicle.slowDown(vehID, new_speed, duration) # 2.5 sec
+            print "t=%d, FASTER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
+                  (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
         elif follow_dist > front_dist:
             # slow down
-            new_speed = max(curr_speed + gain * delta, 0)
-            traci.vehicle.slowDown(vehID, new_speed, 1000) # 2.5 sec
-            print step, "SLOWER", curr_speed, new_speed, front_speed, delta, front_dist, follow_dist
+            new_speed = max(curr_speed + beta * (front_speed-curr_speed) + gain * delta + bias, 0)
+            traci.vehicle.slowDown(vehID, new_speed, duration) # 2.5 sec
+            print "t=%d, SLOWER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
+                  (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
 
     return MidpointFn

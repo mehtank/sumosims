@@ -194,7 +194,7 @@ class LoopSim:
         tag = opts.get("tag", None)
 
         paramsList = opts["paramsList"]
-        simSteps = opts.get("simSteps", 500)
+        self.simSteps = opts.get("simSteps", 500)
 
         if self.label is None:
             self.label = "-".join([x["name"] + "%03d" % x["count"] 
@@ -206,7 +206,7 @@ class LoopSim:
         self._simInit("-" + self.label, [x["name"] for x in paramsList])
         self._addTypes(paramsList)
         self._addCars(paramsList)
-        self._run(simSteps)
+        self._run(self.simSteps)
 
     def plot(self, show=True, save=False):
         # Plot results
@@ -232,34 +232,35 @@ if __name__ == "__main__":
 
     humanParams = {
             "name"        : "human",
-            "count"       :  30,
+            "count"       :  25,
             "maxSpeed"    :  40,
-            "accel"       :   4,
-            "decel"       :   6,
-            "function"    : changeFasterLaneBuilder(),
+            "accel"       :   2.6,
+            "decel"       :   4.5,
+            # "function"    : randomChangeLaneFn,
+            # "function"    : changeFasterLaneBuilder(),
             "laneSpread"  : 0,
             "speedFactor" : 1.0,
             "speedDev"    : 0.1,
             "sigma"       : 0.5,
-            "tau"         : 2,
+            "tau"         : 4,
             }
 
     robotParams = {
             "name"        : "robot",
-            "count"       :   10,
+            "count"       :  25,
             "maxSpeed"    :  40,
             "accel"       :   4,
             "decel"       :   6,
-            "function"    : MidpointFnBuilder(max_speed = 26.8, gain = 0.1),
-            # "function"    : ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.1),
+            # "function"    : MidpointFnBuilder(max_speed=40, gain=0.1, beta=0.9, duration=250, bias=1.0, ratio=0.25),
+            "function"    : ACCFnBuilder(follow_sec=1.0, max_speed=40, gain=0.1, beta=0.9),
             "laneSpread"  : 0,
-            "tau"         : 1,
+            "tau"         : 0.5,
             }
 
     opts = {
             "paramsList" : [humanParams, robotParams],
             "simSteps"   : 500,
-            "tag"        : "Midpoint"
+            "tag"        : "ACC"
             }
 
     defaults.SIM_STEP_LENGTH = 0.5
