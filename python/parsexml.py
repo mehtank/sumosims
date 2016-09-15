@@ -1,10 +1,10 @@
 from lxml import objectify
 from scipy import interpolate
 
-def interp(x, y, xmax):
+def interp(x, y, xmax, ydefault=0):
         if len(x) == 0:
             x = [0]
-            y = [0]
+            y = [ydefault]
 
         newx = []; newy = []
 
@@ -21,7 +21,7 @@ def interp(x, y, xmax):
         f = interpolate.interp1d(x, y, assume_sorted=False)
         return f
 
-def parsexml(fn, edgestarts, xmax):
+def parsexml(fn, edgestarts, xmax, ydefault=0):
     obj = objectify.parse(file(fn)).getroot()
 
     alldata = []
@@ -52,10 +52,10 @@ def parsexml(fn, edgestarts, xmax):
                 lanedata[lid].extend(thislane)
         alldata.extend(this)
         trng.append(t)
-        f = interp([x["position"] for x in this], [x["speed"] for x in this], xmax)
+        f = interp([x["position"] for x in this], [x["speed"] for x in this], xmax, ydefault)
         speeds.append(f(xrng))
         for lid, thislane in lanedata.iteritems():
-            f = interp([x["position"] for x in thislane], [x["speed"] for x in thislane], xmax)
+            f = interp([x["position"] for x in thislane], [x["speed"] for x in thislane], xmax, ydefault)
             if not lid in lanespeeds:
                 lanespeeds[lid] = []
             lanespeeds[lid].append(f(xrng))

@@ -41,6 +41,7 @@ class LoopSim:
         self.name = "%s-%dm%dl" % (name, length, numLanes)
         self.length = length
         self.numLanes = numLanes
+        self.speedLimit = speedLimit
 
         edgelen = length/4.
         self.edgestarts = {"bottom": 0, 
@@ -212,7 +213,7 @@ class LoopSim:
     def plot(self, show=True, save=False):
         # Plot results
         nsfn = self.outs["netstate"]
-        alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, self.edgestarts, self.length)
+        alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, self.edgestarts, self.length, self.speedLimit)
 
         print "Generating interpolated plot..."
         plt = pcolor_multi("Traffic jams (%d lanes, %s)" % (self.numLanes, self.label), 
