@@ -66,13 +66,17 @@ def pcolor_multi(title, (xrng, xlabel),
                   (vdict, vlabel), 
                   (sdict, smin, smax, slabel),
                   (odict, olabel, otypes),
-                  (fdict, flabel)):
+                  (fdict, fmin, fmax, (flabel, funit1, funit2))):
 
     numlanes = len(sdict)
 
     fig, axarr = plt.subplots(numlanes+1, 2, 
             sharex=True, 
-            figsize=(8, 6), dpi=128)
+            figsize=(16, 9), dpi=100)
+
+    vax = axarr[-1,0]
+    fax1 = axarr[-1,1]
+    fax2 = fax1.twinx()
 
     x, y = meshgrid(xrng, yrng)
 
@@ -88,18 +92,24 @@ def pcolor_multi(title, (xrng, xlabel),
         cx2 = ax2.pcolormesh(T(y), T(x), tv)
         ax2.axis('tight')
 
-        axarr[-1,0].plot(yrng, vdict[sid], label="lane %s" % sid)
-        handles, labels = axarr[-1,0].get_legend_handles_labels()
+        vax.plot(yrng, vdict[sid], label="lane %s" % sid)
+        handles, labels = vax.get_legend_handles_labels()
         lbl = handles[-1]
         ax.set_title("lane %s" % sid, color=lbl.get_c())
 
-        axarr[-1,1].plot(yrng, fdict[sid], label="lane %s" % sid)
+        fax1.plot(yrng, fdict[sid], label="lane %s" % sid)
+        fax2.plot(yrng, array(fdict[sid])/array(vdict[sid]), '--', label="lane %s" % sid)
 
-    axarr[-1,0].set_ylabel(vlabel)
-    axarr[-1,0].set_xlabel(ylabel)
+    vax.set_ylabel(vlabel)
+    vax.set_ylim([smin, smax])
+    vax.set_xlabel(ylabel)
 
-    axarr[-1,1].set_ylabel(flabel)
-    axarr[-1,1].set_xlabel(ylabel)
+    fax1.set_ylabel(flabel + " " + funit1)
+    fax2.set_ylabel(flabel + " " + funit2)
+    if fmin is not None and fmax is not None:
+        fax1.set_ylim([fmin, fmax])
+        fax2.set_ylim([fmin/4, fmax/4])
+    fax1.set_xlabel(ylabel)
     fig.text(0.5, 0.975, title, 
             horizontalalignment='center', verticalalignment='top')
     # Add colorbar

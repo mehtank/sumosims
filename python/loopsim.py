@@ -4,6 +4,7 @@ import os
 import errno
 import random
 import copy
+import numpy as np
 
 # Make sure $SUMO_HOME/tools is in $PYTHONPATH
 from sumolib import checkBinary
@@ -216,19 +217,43 @@ class LoopSim:
         self._addCars(paramsList)
         self._run(self.simSteps)
 
-    def plot(self, show=True, save=False):
+    def plot(self, show=True, save=False, speedRange=None, fuelRange=None):
         # Plot results
         emfn = self.outs["emission"]
         trng, xrng, avgspeeds, lanespeeds, (laneoccupancy, typecolors), totfuel, = parsexml(emfn, self.edgestarts, self.length, self.speedLimit)
+
+        if speedRange == 'avg':
+            mnspeed = min([min(s) for s in avgspeeds.values()])
+            mxspeed = max([max(s) for s in avgspeeds.values()])
+        elif speedRange == 'tight':
+            mnspeed = min([np.percentile(s,5) for s in avgspeeds.values()])
+            mxspeed = max([np.percentile(s,95) for s in avgspeeds.values()])
+        elif speedRange == 'road':
+            mnspeed, mxspeed = 0, self.speedLimit
+        elif speedRange is None or speedRange == 'car':
+            mnspeed, mxspeed = 0, self.maxSpeed
+        else:
+            mnspeed, mxspeed = speedRange
+
+        if fuelRange == 'avg':
+            mnfuel = min([min(s) for s in avgfuels.values()])
+            mxfuel = max([max(s) for s in avgfuels.values()])
+        elif fuelRange == 'tight':
+            mnfuel = min([np.percentile(s,5) for s in avgfuels.values()])
+            mxfuel = max([np.percentile(s,95) for s in avgfuels.values()])
+        elif fuelRange is None or fuelRange == 'car':
+            mnfuel, mxfuel = None, None
+        else:
+            mnfuel, mxfuel = fuelRange
 
         print "Generating interpolated plot..."
         plt = pcolor_multi("Traffic jams (%d lanes, %s)" % (self.numLanes, self.label), 
                 (xrng, "Position along loop (m)"),
                 (trng, "Time (s)"),
                 (avgspeeds, "Average loop speed (m/s)"),
-                (lanespeeds, 0, self.maxSpeed, "Speed (m/s)"),
+                (lanespeeds, mnspeed, mxspeed, "Speed (m/s)"),
                 (laneoccupancy, "Vehicle positions", typecolors),
-                (totfuel, "Fuel consumption (mL/s)"))
+                (totfuel, mnfuel, mxfuel, ("Fuel consumption", "(mL/s)", "(mL/m)")))
 
         fig = plt.gcf()
         if show:
