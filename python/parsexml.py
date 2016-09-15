@@ -2,10 +2,10 @@ from lxml import objectify
 from scipy import interpolate
 import numpy as np
 
-def interp(x, y, xmax, ydefault=0):
+def interp(x, y, xmax, vdefault=0):
         if len(x) == 0:
             x = [0]
-            y = [ydefault]
+            y = [vdefault]
 
         newx = []; newy = []
 
@@ -22,54 +22,54 @@ def interp(x, y, xmax, ydefault=0):
         f = interpolate.interp1d(x, y, assume_sorted=False)
         return f
 
-def parsexml(fn, edgestarts, xmax, ydefault=0):
+def parsexml(fn, edgestarts, xmax, vdefault=0):
     obj = objectify.parse(file(fn)).getroot()
 
-    alldata = []
     trng = []
     xrng = range(0, xmax)
     lanespeeds = {}
     laneoccupancy = {}
     avgspeeds = {}
+    totfuel = {}
 
     for timestep in obj.timestep:
         t = float(timestep.get("time"))
-        this = []
+
         lanedata = {}
-        for edge in timestep.edge:
-            for lane in edge.lane:
-                lid = lane.get("id")[-1]
-                if not lid in lanedata:
-                    lanedata[lid] = []
-                thislane = []
-                try:
-                    for vehicle in lane.vehicle:
-                        name = vehicle.get("id")
-                        v = float(vehicle.get("speed"))
-                        x = float(vehicle.get("pos"))+edgestarts[edge.get("id")]
-                        thislane.append({"name": name, "time": t, "position": x, "speed": v})
-                except AttributeError:
-                    pass
-                this.extend(thislane)
-                lanedata[lid].extend(thislane)
-        alldata.extend(this)
-        trng.append(t)
+        try:
+            for vehicle in timestep.vehicle:
+                d = {}
+                d["name"] = vehicle.get("id")
+                d["edge"] = vehicle.get("lane")[:-2]
+                d["v"] = float(vehicle.get("speed"))
+                d["pos"] = float(vehicle.get("pos"))
+                d["x"] = d["pos"] + edgestarts[d["edge"]]
+
+                d["CO2"] = float(vehicle.get("CO2"))
+                d["CO"] = float(vehicle.get("CO"))
+                d["fuel"] = float(vehicle.get("fuel"))
+
+                lid = vehicle.get("lane")[-1]
+                lanedata.setdefault(lid, []).append(d)
+        except AttributeError:
+            pass
 
         for lid, thislane in lanedata.iteritems():
-            f = interp([x["position"] for x in thislane], [x["speed"] for x in thislane], xmax, ydefault)
-            intx = [int(x["position"]) for x in thislane]
+            f = interp([x["x"] for x in thislane], [x["v"] for x in thislane], xmax, vdefault)
+            intx = [int(x["x"]) for x in thislane]
+            fuel = [x["fuel"] for x in thislane]
 
-            if not lid in lanespeeds:
-                lanespeeds[lid] = []
-            if not lid in laneoccupancy:
-                laneoccupancy[lid] = []
+            fx = f(xrng)
+            lanespeeds.setdefault(lid, [[vdefault]*len(xrng)]*len(trng)).append(fx)
+            laneoccupancy.setdefault(lid, [[0]*len(xrng)]*len(trng)).append([1 if x in intx else 0 for x in xrng])
 
-            lanespeeds[lid].append(f(xrng))
-            laneoccupancy[lid].append([1 if x in intx else 0 for x in xrng])
+            dx = np.diff(np.array(xrng + [xrng[0] + xmax]))
+            dt = dx * 1./fx
+            avgspeeds.setdefault(lid, [vdefault]*len(trng)).append(np.sum(dx)/np.sum(dt))
+            totfuel.setdefault(lid, [vdefault]*len(trng)).append(np.sum(fuel))
 
-    for lid, speeds in lanespeeds.iteritems():
-        dx = np.diff(np.array(xrng + [xrng[0] + xmax]))
-        dt = dx * 1./np.array(speeds)
-        avgspeeds[lid] = np.sum(dx)/np.sum(dt, axis=1)
+        trng.append(t)
 
-    return trng, xrng, avgspeeds, lanespeeds, laneoccupancy
+    for x in avgspeeds.values():
+        print len(x)
+    return trng, xrng, avgspeeds, lanespeeds, laneoccupancy, totfuel
