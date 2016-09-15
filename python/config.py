@@ -1,3 +1,6 @@
+# random seed
+RANDOM_SEED = 23434
+
 # the port used for communicating with your sumo instance
 PORT = 8873
 

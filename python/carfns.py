@@ -23,9 +23,6 @@ def changeFasterLaneBuilder(speedThreshold = 5, likelihood = 0.5,
     :return: carFn to input to a carParams
     """
     def carFn((idx, car), sim, step):
-        if step < 250:
-            return
-
         v = [0] * sim.numLanes
         for lane in range(sim.numLanes):
             if sim.getCars(idx, dxBack=gapBack, dxForward=gapForward, lane=lane):
@@ -155,7 +152,7 @@ def MidpointFnBuilder(max_speed = 26.8, gain = 0.1, beta = 0.5, duration = 500, 
 
     return MidpointFn
 
-def SwitchFn(car_type, switch_point, initCarFn=None):
+def SwitchVTypeFn(car_type, switch_point, initCarFn=None):
     """
     Switches vehicle type from initialized to car_type.
 
@@ -172,5 +169,23 @@ def SwitchFn(car_type, switch_point, initCarFn=None):
             initCarFn((idx, car), sim, step)
         if step == int(float(sim.simSteps) * switch_point):
             traci.vehicle.setType(car["id"], car_type)
+
+    return CarFn
+
+def SwitchFn(switchList):
+    """
+    Switches between car functions
+
+    :param switchDict: Dictionary of (switchPoint, function) pairs
+    :return:
+    """
+
+    def CarFn((idx, car), sim, step):
+        selected = None
+        for (switchPoint, function) in switchList:
+            if step >= sim.simSteps * switchPoint:
+                selected = function
+        if selected is not None:
+            selected((idx, car), sim, step)
 
     return CarFn

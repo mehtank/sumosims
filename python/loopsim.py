@@ -26,6 +26,10 @@ KNOWN_PARAMS = {
         "speedDev"      : traci.vehicletype.setSpeedDeviation,
         }
 
+if defaults.RANDOM_SEED:
+    print "Setting random seed to ", defaults.RANDOM_SEED
+    random.seed(defaults.RANDOM_SEED)
+
 def ensure_dir(path):
     try:
         os.makedirs(path)
@@ -37,10 +41,13 @@ def ensure_dir(path):
 class LoopSim:
 
     def __init__(self, name, length, numLanes, 
+            simStepLength=defaults.SIM_STEP_LENGTH,
             speedLimit=defaults.SPEED_LIMIT, port=defaults.PORT):
         self.name = "%s-%dm%dl" % (name, length, numLanes)
         self.length = length
         self.numLanes = numLanes
+        self.speedLimit = speedLimit
+        self.simStepLength = simStepLength
 
         edgelen = length/4.
         self.edgestarts = {"bottom": 0, 
@@ -73,7 +80,7 @@ class LoopSim:
         sumoBinary = checkBinary('sumo')
         self.sumoProcess = subprocess.Popen([
                 sumoBinary, 
-                "--step-length", repr(defaults.SIM_STEP_LENGTH),
+                "--step-length", repr(self.simStepLength),
                 "--no-step-log",
                 "-c", self.cfgfn,
                 "--remote-port", str(self.port)], 
@@ -212,7 +219,7 @@ class LoopSim:
     def plot(self, show=True, save=False):
         # Plot results
         nsfn = self.outs["netstate"]
-        alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, self.edgestarts, self.length)
+        alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, self.edgestarts, self.length, self.speedLimit)
 
         print "Generating interpolated plot..."
         plt = pcolor_multi("Traffic jams (%d lanes, %s)" % (self.numLanes, self.label), 
@@ -229,7 +236,7 @@ class LoopSim:
 
 # this is the main entry point of this script
 if __name__ == "__main__":
-    from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder, MidpointFnBuilder, SwitchFn
+    from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder, MidpointFnBuilder, SwitchVTypeFn
 
     changeFasterLane = changeFasterLaneBuilder()
     # changeFasterLane = changeFasterLaneBuilder(likelihood=1, speedThreshold=2)
@@ -264,7 +271,7 @@ if __name__ == "__main__":
     hybridParams = copy.copy(humanParams)
     hybridParams["name"] = "hybrid"
     hybridParams["count"] = 5
-    hybridParams["function"] = SwitchFn("robot", 0.5, initCarFn=changeFasterLane)
+    hybridParams["function"] = SwitchVTypeFn("robot", 0.5, initCarFn=randomChangeLaneFn)
 
     opts = {
             "paramsList" : [humanParams, robotParams, hybridParams],
@@ -272,7 +279,6 @@ if __name__ == "__main__":
             "tag"        : "aggressiveFasterLane"
             }
 
-    defaults.SIM_STEP_LENGTH = 0.5
-    sim = LoopSim("loopsim", length=1000, numLanes=2)
+    sim = LoopSim("loopsim", length=1000, numLanes=2, simStepLength=0.5)
     sim.simulate(opts)
     sim.plot(show=True, save=True)
