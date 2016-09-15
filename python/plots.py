@@ -85,7 +85,7 @@ def pcolor_multi(title, (xrng, xlabel),
         ax.axis('tight')
 
         tv = T(array(odict[sid]))
-        cax = ax2.pcolormesh(T(y), T(x), tv)
+        ax2.pcolormesh(T(y), T(x), tv)
         ax2.axis('tight')
 
         axarr[-1,0].plot(yrng, vdict[sid], label="lane %s" % sid)
