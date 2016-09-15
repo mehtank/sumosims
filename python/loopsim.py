@@ -19,7 +19,7 @@ from plots import pcolor, pcolor_multi
 KNOWN_PARAMS = {
         "maxSpeed"      : traci.vehicletype.setMaxSpeed,
         "accel"         : traci.vehicletype.setAccel,
-        "decel"         : traci.vehicletype.setAccel,
+        "decel"         : traci.vehicletype.setDecel,
         "sigma"         : traci.vehicletype.setImperfection,
         "tau"           : traci.vehicletype.setTau,
         "speedFactor"   : traci.vehicletype.setSpeedFactor,
