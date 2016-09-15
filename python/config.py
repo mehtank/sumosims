@@ -17,4 +17,7 @@ DATA_PATH = "data/"
 
 # Roadway speed limit
 # 30 m/s = 67.1081 mph
-SPEED_LIMIT = 30
+SPEED_LIMIT = 35
+
+# Maximum speed for agents
+MAX_SPEED = 40
