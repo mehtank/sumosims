@@ -2,7 +2,7 @@ from loopsim import LoopSim
 
 # this is the main entry point of this script
 if __name__ == "__main__":
-    from agent_types import humanParams
+    from agent_types import basicHumanParams as humanParams
 
     for count in [20, 25, 30, 35, 40, 45, 50]:
         humanParams["count"] = count
