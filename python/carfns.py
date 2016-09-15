@@ -23,9 +23,6 @@ def changeFasterLaneBuilder(speedThreshold = 5, likelihood = 0.5,
     :return: carFn to input to a carParams
     """
     def carFn((idx, car), sim, step):
-        if step < 250:
-            return
-
         v = [0] * sim.numLanes
         for lane in range(sim.numLanes):
             if sim.getCars(idx, dxBack=gapBack, dxForward=gapForward, lane=lane):
