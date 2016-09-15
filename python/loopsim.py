@@ -26,6 +26,10 @@ KNOWN_PARAMS = {
         "speedDev"      : traci.vehicletype.setSpeedDeviation,
         }
 
+if defaults.RANDOM_SEED:
+    print "Setting random seed to ", defaults.RANDOM_SEED
+    random.seed(defaults.RANDOM_SEED)
+
 def ensure_dir(path):
     try:
         os.makedirs(path)
