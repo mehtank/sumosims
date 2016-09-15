@@ -1,4 +1,4 @@
-from numpy import meshgrid, array, linspace, diff, sum
+import numpy as np
 from numpy import transpose as T
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -43,8 +43,8 @@ def pcolor(title, (xrng, xlabel),
 
     #y, x = mgrid[yrng, xrng]
     #cax = ax.pcolor(x, y, s, 
-    x, y = meshgrid(xrng, yrng)
-    cax = ax.pcolormesh(x, y, array(s),
+    x, y = np.meshgrid(xrng, yrng)
+    cax = ax.pcolormesh(x, y, np.array(s),
             vmin=smin, vmax=smax, 
             cmap=my_cmap)
     ax.set_title(title)
@@ -81,27 +81,38 @@ def pcolor_multi(title, (xrng, xlabel),
     tmapcolors = list("kcrygbm")[:tn]
     tmap = colors.ListedColormap(tmapcolors)
 
-    x, y = meshgrid(xrng, yrng)
+    x, y = np.meshgrid(xrng, yrng)
 
     for (ax, ax2, sid) in zip(axarr[:,0], axarr[:,1], sorted(sdict)):
-        tv = T(array(sdict[sid]))
+        tv = T(np.array(sdict[sid]))
         cax = ax.pcolormesh(T(y), T(x), tv,
                 vmin=smin, vmax=smax, 
                 cmap=my_cmap)
         ax.set_ylabel(xlabel)
         ax.axis('tight')
 
-        tv = T(array(odict[sid]))
+        vmn = np.min(tv, axis=0)
+        v25 = np.percentile(tv, 25, axis=0)
+        v75 = np.percentile(tv, 75, axis=0)
+        vmx = np.max(tv, axis=0)
+
+        tv = T(np.array(odict[sid]))
         cx2 = ax2.pcolormesh(T(y), T(x), tv, cmap=tmap)
         ax2.axis('tight')
 
-        vax.plot(yrng, vdict[sid], label="lane %s" % sid)
-        handles, labels = vax.get_legend_handles_labels()
-        lbl = handles[-1]
-        ax.set_title("lane %s" % sid, color=lbl.get_c())
-
         fax1.plot(yrng, fdict[sid], label="lane %s" % sid)
-        fax2.plot(yrng, array(fdict[sid])/array(vdict[sid]), '--', label="lane %s" % sid)
+        fax2.plot(yrng, np.array(fdict[sid])/np.array(vdict[sid]), '--', label="lane %s" % sid)
+
+        handles, labels = fax1.get_legend_handles_labels()
+        lbl = handles[-1]
+        linecolor = lbl.get_c()
+        ax.set_title("lane %s" % sid, color=linecolor)
+
+        lc = colors.colorConverter.to_rgba(linecolor, alpha=0.1)
+        vax.fill_between(yrng, vmn, vmx, color=lc)
+        lc = colors.colorConverter.to_rgba(linecolor, alpha=0.25)
+        vax.fill_between(yrng, v25, v75, color=lc)
+        vax.plot(yrng, vdict[sid], label="lane %s" % sid)
 
     vax.set_ylabel(vlabel)
     vax.set_ylim([smin, smax])
@@ -120,7 +131,7 @@ def pcolor_multi(title, (xrng, xlabel),
     cbar_ax = fig.add_axes([0.84, 0.35, 0.02, 0.55])
     cbar_ax2 = fig.add_axes([0.84, 0.1, 0.02, 0.2])
 
-    ticks = linspace(smin, smax, 6)
+    ticks = np.linspace(smin, smax, 6)
     cbar = fig.colorbar(cax, cax=cbar_ax, ticks=ticks)
     cbar.ax.set_yticklabels(ticks)  # vertically oriented colorbar
     cbar.ax.set_ylabel(slabel, rotation=270, labelpad=20)

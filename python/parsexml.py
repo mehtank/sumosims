@@ -72,8 +72,11 @@ def parsexml(fn, edgestarts, xmax, vdefault=0):
 
             dx = np.diff(np.array(xrng + [xrng[0] + xmax]))
             dt = dx * 1./fx
-            avgspeeds.setdefault(lid, [vdefault]*len(trng)).append(np.sum(dx)/np.sum(dt))
-            totfuel.setdefault(lid, [vdefault]*len(trng)).append(np.sum(fuel))
+            looptime = np.sum(dt)
+            avgspeed = xmax / looptime
+            totfuelrate = np.sum(fuel)
+            avgspeeds.setdefault(lid, [vdefault]*len(trng)).append(avgspeed)
+            totfuel.setdefault(lid, [vdefault]*len(trng)).append(totfuelrate)
 
         trng.append(t)
 
