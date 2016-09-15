@@ -69,10 +69,6 @@ def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01, beta = 0.5):
         # TODO(cathywu) Setting tau to any value seems to cause collisions
         # traci.vehicle.setTau(vehID, 0.01)
 
-        if step < sim.simSteps/2:
-            # changeFasterLaneBuilder()((idx, car), sim, step)
-            return
-
         try:
             [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
         except ValueError:
@@ -80,7 +76,6 @@ def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01, beta = 0.5):
             return
 
         front_dist = (front_car["x"] - car["x"]) % sim.length
-        back_dist = (car["x"] - back_car["x"]) % sim.length
 
         curr_speed = car["v"]
         front_speed = front_car["v"]
@@ -173,7 +168,14 @@ def FillGapFnBuilder(duration=500, gap_back=10, gap_forward=5, gap_threshold=10)
                 # cars too close, no lane changing allowed
                 gap[lane] = 0
                 continue
-            [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=lane)
+
+            try:
+                [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
+            except ValueError:
+                # Not enough cars on lane
+                gap[lane] = 0
+                continue
+
             gap[lane] = (front_car["x"] - back_car["x"]) % sim.length
             new_speed[lane] = (front_car["v"] + back_car["v"]) / 2
         max_gap = max(gap)
@@ -211,7 +213,14 @@ def FillGapMidpointFnBuilder(duration=500, gap_back=10, gap_forward=5,
                 # cars too close, no lane changing allowed
                 gap[lane] = 0
                 continue
-            [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=lane)
+
+            try:
+                [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
+            except ValueError:
+                # Not enough cars on lane
+                gap[lane] = 0
+                continue
+
             gap[lane] = (front_car["x"] - back_car["x"]) % sim.length
             new_speed[lane] = (front_car["v"] + back_car["v"]) / 2
         max_gap = max(gap)
