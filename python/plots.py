@@ -65,7 +65,8 @@ def pcolor_multi(title, (xrng, xlabel),
                   (yrng, ylabel), 
                   (vdict, vlabel), 
                   (sdict, smin, smax, slabel),
-                  (odict, olabel)):
+                  (odict, olabel),
+                  (fdict, flabel)):
 
     numlanes = len(sdict)
 
@@ -92,8 +93,13 @@ def pcolor_multi(title, (xrng, xlabel),
         lbl = handles[-1]
         ax.set_title("lane %s" % sid, color=lbl.get_c())
 
+        axarr[-1,1].plot(yrng, fdict[sid], label="lane %s" % sid)
+
     axarr[-1,0].set_ylabel(vlabel)
     axarr[-1,0].set_xlabel(ylabel)
+
+    axarr[-1,1].set_ylabel(flabel)
+    axarr[-1,1].set_xlabel(ylabel)
     fig.text(0.5, 0.975, title, 
             horizontalalignment='center', verticalalignment='top')
     # Add colorbar
