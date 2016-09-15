@@ -219,13 +219,15 @@ class LoopSim:
     def plot(self, show=True, save=False):
         # Plot results
         nsfn = self.outs["netstate"]
-        alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, self.edgestarts, self.length, self.speedLimit)
+        trng, xrng, avgspeeds, lanespeeds, laneoccupancy = parsexml(nsfn, self.edgestarts, self.length, self.speedLimit)
 
         print "Generating interpolated plot..."
         plt = pcolor_multi("Traffic jams (%d lanes, %s)" % (self.numLanes, self.label), 
                 (xrng, "Position along loop (m)"),
                 (trng, "Time (s)"),
-                (lanespeeds, 0, self.maxSpeed, "Speed (m/s)"))
+                (avgspeeds, "Average loop speed (m/s)"),
+                (lanespeeds, 0, self.maxSpeed, "Speed (m/s)"),
+                (laneoccupancy, "Vehicle positions"))
 
         fig = plt.gcf()
         if show:

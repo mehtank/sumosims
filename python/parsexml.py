@@ -1,5 +1,6 @@
 from lxml import objectify
 from scipy import interpolate
+import numpy as np
 
 def interp(x, y, xmax, ydefault=0):
         if len(x) == 0:
@@ -27,8 +28,9 @@ def parsexml(fn, edgestarts, xmax, ydefault=0):
     alldata = []
     trng = []
     xrng = range(0, xmax)
-    speeds = []
     lanespeeds = {}
+    laneoccupancy = {}
+    avgspeeds = {}
 
     for timestep in obj.timestep:
         t = float(timestep.get("time"))
@@ -52,12 +54,22 @@ def parsexml(fn, edgestarts, xmax, ydefault=0):
                 lanedata[lid].extend(thislane)
         alldata.extend(this)
         trng.append(t)
-        f = interp([x["position"] for x in this], [x["speed"] for x in this], xmax, ydefault)
-        speeds.append(f(xrng))
+
         for lid, thislane in lanedata.iteritems():
             f = interp([x["position"] for x in thislane], [x["speed"] for x in thislane], xmax, ydefault)
+            intx = [int(x["position"]) for x in thislane]
+
             if not lid in lanespeeds:
                 lanespeeds[lid] = []
-            lanespeeds[lid].append(f(xrng))
+            if not lid in laneoccupancy:
+                laneoccupancy[lid] = []
 
-    return alldata, trng, xrng, speeds, lanespeeds
+            lanespeeds[lid].append(f(xrng))
+            laneoccupancy[lid].append([1 if x in intx else 0 for x in xrng])
+
+    for lid, speeds in lanespeeds.iteritems():
+        dx = np.diff(np.array(xrng + [xrng[0] + xmax]))
+        dt = dx * 1./np.array(speeds)
+        avgspeeds[lid] = np.sum(dx)/np.sum(dt, axis=1)
+
+    return trng, xrng, avgspeeds, lanespeeds, laneoccupancy
