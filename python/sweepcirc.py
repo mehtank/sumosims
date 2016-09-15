@@ -34,13 +34,13 @@ for numlanes in (1, 2, 3):
 
         nsfn = outs["netstate"]
         print "Parsing xml file %s..." % nsfn
-        alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, edgestarts, length)
+        trng, xrng, avgspeeds, lanespeeds, laneoccupancy = parsexml(nsfn, edgestarts, length)
 
         print "Generating interpolated plot..."
-        plt = pcolor("Traffic jams (%d lanes, %d cars)" % (numlanes, numcars), 
+        plt = pcolor_multi("Traffic jams (%d lanes, %d cars)" % (numlanes, numcars), 
                     (xrng, "Position along loop (m)"),
                     (trng, "Time (s)"),
-                    (speeds, 0, maxspeed, "Speed (m/s)"))
+                    (lanespeeds, 0, maxspeed, "Speed (m/s)"))
 
         plt.savefig('img/interp-%s.png' % name)
         print "Done!"

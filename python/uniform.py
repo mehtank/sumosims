@@ -93,7 +93,7 @@ if __name__ == "__main__":
     # Plot results
     nsfn = outs["netstate"]
     print "Parsing xml output file %s..." % nsfn
-    alldata, trng, xrng, speeds, lanespeeds = parsexml(nsfn, edgestarts, length)
+    trng, xrng, avgspeeds, lanespeeds, laneoccupancy = parsexml(nsfn, edgestarts, length)
 
     print "Generating interpolated plot..."
     plt = pcolor_multi("Traffic jams (%d lanes, %d cars)" % (numlanes, numcars), 
