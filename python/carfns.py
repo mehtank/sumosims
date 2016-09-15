@@ -89,14 +89,14 @@ def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01, beta = 0.5):
             # speed up
             new_speed = min(curr_speed + beta * (front_speed-curr_speed) + gain * delta, max_speed)
             traci.vehicle.slowDown(vehID, new_speed, 1000) # 2.5 sec
-            print "t=%d, FASTER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
-                  (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
+            # print "t=%d, FASTER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
+            #       (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
         elif follow_dist > front_dist:
             # slow down
             new_speed = max(curr_speed + beta * (front_speed-curr_speed) + gain * delta, 0)
             traci.vehicle.slowDown(vehID, new_speed, 1000) # 2.5 sec
-            print "t=%d, SLOWER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
-                  (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
+            # print "t=%d, SLOWER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
+            #       (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
 
     return ACCFn
 
@@ -141,14 +141,14 @@ def MidpointFnBuilder(max_speed = 26.8, gain = 0.1, beta = 0.5, duration = 500, 
             # speed up
             new_speed = min(curr_speed + beta * (front_speed-curr_speed) + gain * delta + bias, max_speed)
             traci.vehicle.slowDown(vehID, new_speed, duration) # 2.5 sec
-            print "t=%d, FASTER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
-                  (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
+            # print "t=%d, FASTER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
+            #       (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
         elif follow_dist > front_dist:
             # slow down
             new_speed = max(curr_speed + beta * (front_speed-curr_speed) + gain * delta + bias, 0)
             traci.vehicle.slowDown(vehID, new_speed, duration) # 2.5 sec
-            print "t=%d, SLOWER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
-                  (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
+            # print "t=%d, SLOWER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
+            #       (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
 
     return MidpointFn
 
