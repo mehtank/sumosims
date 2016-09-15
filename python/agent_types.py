@@ -1,4 +1,7 @@
-from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder, MidpointFnBuilder, SwitchVTypeFn
+import copy
+
+from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder,\
+    MidpointFnBuilder, SwitchVTypeFn, FillGapFnBuilder, FillGapMidpointFnBuilder
 import config as defaults
 
 changeFasterLane = changeFasterLaneBuilder()
@@ -19,37 +22,39 @@ basicHumanParams = {
     # "laneChangeModel": 'LC2013',
 }
 
-# In the literature, the IDM model is used as adaptive cruise control
-basicIDMParams = {
-    "name"        : "idm",
-    "count"       :  0,
-    "maxSpeed"    :  defaults.MAX_SPEED,
-    "accel"       :   4,
-    "decel"       :   6,
-    "carFollowModel": "IDM",
-    "laneSpread"  : 0,
-    "tau"         : 0.5,
-}
-
-basicACCParams = {
-    "name"        : "acc",
-    "count"       :  0,
-    "maxSpeed"    :  defaults.MAX_SPEED,
-    "accel"       :   4,
-    "decel"       :   6,
-    # "function"    : MidpointFnBuilder(max_speed=40, gain=0.1, beta=0.9, duration=250, bias=1.0, ratio=0.25),
-    "function"    : ACCFnBuilder(follow_sec=1.0, max_speed=defaults.MAX_SPEED, gain=0.1, beta=0.9),
-    "laneSpread"  : 0,
-    "tau"         : 0.5,
-}
-
 basicRobotParams = {
     "name"        : "robot",
     "count"       :  0,
     "maxSpeed"    :  defaults.MAX_SPEED,
     "accel"       :   4,
     "decel"       :   6,
-    "function"    : MidpointFnBuilder(max_speed=40, gain=0.1, beta=0.9, duration=250, bias=1.0, ratio=0.25),
     "laneSpread"  : 0,
     "tau"         : 0.5,
 }
+
+# In the literature, the IDM model is used as adaptive cruise control
+basicIDMParams = copy.copy(basicRobotParams)
+basicIDMParams["name"] = "idm"
+basicIDMParams["carFollowModel"] = "IDM"
+
+basicACCParams = copy.copy(basicRobotParams)
+basicACCParams["name"] = "acc"
+basicACCParams["function"] = ACCFnBuilder(follow_sec=1.0,
+                                          max_speed=defaults.MAX_SPEED,
+                                          gain=0.1, beta=0.9)
+
+basicGapFillerParams = copy.copy(basicRobotParams)
+basicGapFillerParams["name"] = "gapfiller"
+basicGapFillerParams["function"] = FillGapFnBuilder(duration=250)
+
+basicFillGapMidpointParams = copy.copy(basicRobotParams)
+basicFillGapMidpointParams["name"] = "fillgapmidpoint"
+basicFillGapMidpointParams["function"] = \
+    FillGapMidpointFnBuilder(max_speed=40, gain=0.1, beta=0.9, duration=250,
+                             bias=1.0, ratio=0.25)
+
+basicMidpointParams = copy.copy(basicRobotParams)
+basicMidpointParams["name"] = "midpoint"
+basicMidpointParams["function"] = MidpointFnBuilder(max_speed=40, gain=0.1,
+                                                    beta=0.9, duration=250,
+                                                    bias=1.0, ratio=0.25)

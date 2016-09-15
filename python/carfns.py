@@ -9,6 +9,7 @@ def randomChangeLaneFn((idx, car), sim, step):
     if random.random() > .99:
         traci.vehicle.changeLane(car["id"], 1-li, 1000)
 
+
 def changeFasterLaneBuilder(speedThreshold = 5, likelihood = 0.5, 
                             dxBack = 0, dxForward = 60, 
                             gapBack = 10, gapForward = 5):
@@ -44,6 +45,7 @@ def changeFasterLaneBuilder(speedThreshold = 5, likelihood = 0.5,
             traci.vehicle.changeLane(car["id"], maxl, 10000)
     return carFn
 
+
 def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01, beta = 0.5):
     """
     Basic adaptive cruise control (ACC) controller
@@ -67,10 +69,6 @@ def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01, beta = 0.5):
         # TODO(cathywu) Setting tau to any value seems to cause collisions
         # traci.vehicle.setTau(vehID, 0.01)
 
-        if step < sim.simSteps/2:
-            # changeFasterLaneBuilder()((idx, car), sim, step)
-            return
-
         try:
             [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
         except ValueError:
@@ -78,7 +76,6 @@ def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01, beta = 0.5):
             return
 
         front_dist = (front_car["x"] - car["x"]) % sim.length
-        back_dist = (car["x"] - back_car["x"]) % sim.length
 
         curr_speed = car["v"]
         front_speed = front_car["v"]
@@ -99,6 +96,7 @@ def ACCFnBuilder(follow_sec = 3.0, max_speed = 26.8, gain = 0.01, beta = 0.5):
             #       (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
 
     return ACCFn
+
 
 def MidpointFnBuilder(max_speed = 26.8, gain = 0.1, beta = 0.5, duration = 500, bias = 1.0, ratio = 0.5):
     """
@@ -152,6 +150,118 @@ def MidpointFnBuilder(max_speed = 26.8, gain = 0.1, beta = 0.5, duration = 500, 
 
     return MidpointFn
 
+
+def FillGapFnBuilder(duration=500, gap_back=10, gap_forward=5, gap_threshold=10):
+    """
+    Opportunistically filled gaps in neighboring lanes
+    :param duration: duration for transitioning to new speed (ms)
+    :param gap_back: Minimum required clearance behind car
+    :param gap_forward: Minimum required clearance in front car
+    :param gap_threshold: Minimum required gap difference between current lane and next lane
+    :return: carFn to input to a carParams
+    """
+    def carFn((idx, car), sim, step):
+        gap = [0] * sim.numLanes
+        new_speed = [0] * sim.numLanes
+        for lane in range(sim.numLanes):
+            if sim.getCars(idx, dxBack=gap_back, dxForward=gap_forward, lane=lane):
+                # cars too close, no lane changing allowed
+                gap[lane] = 0
+                continue
+
+            try:
+                [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
+            except ValueError:
+                # Not enough cars on lane
+                gap[lane] = 0
+                continue
+
+            gap[lane] = (front_car["x"] - back_car["x"]) % sim.length
+            new_speed[lane] = (front_car["v"] + back_car["v"]) / 2
+        max_gap = max(gap)
+        max_lane = gap.index(max_gap)
+
+        if max_lane != car["lane"] and max_gap-gap[car["lane"]] > gap_threshold:
+            traci.vehicle.slowDown(car["id"], new_speed[max_lane], duration)
+            traci.vehicle.changeLane(car["id"], max_lane, 10000)
+
+    return carFn
+
+
+def FillGapMidpointFnBuilder(duration=500, gap_back=10, gap_forward=5,
+                             gap_threshold=10, max_speed=26.8, gain=0.1,
+                             beta=0.5, bias=1.0, ratio=0.5):
+    """
+    Opportunistically filled gaps in neighboring lanes
+    :param duration: duration for transitioning to new speed (ms)
+    :param gap_back: Minimum required clearance behind car
+    :param gap_forward: Minimum required clearance in front car
+    :param gap_threshold: Minimum required gap difference between current lane and next lane
+    :param max_speed: 26.8 m/s = 60 mph
+    :param gain: gain for tracking following distance
+    :param beta: gain for tracking speed of front vehicle
+    :param bias: additive speed bias term (m/s)
+    :param ratio: ratio of distance between front and back vehicles to track
+            as following distance (default is 0.5=midpoint)
+    :return: carFn to input to a carParams
+    """
+    def carFn((idx, car), sim, step):
+        gap = [0] * sim.numLanes
+        new_speed = [0] * sim.numLanes
+        for lane in range(sim.numLanes):
+            if sim.getCars(idx, dxBack=gap_back, dxForward=gap_forward, lane=lane):
+                # cars too close, no lane changing allowed
+                gap[lane] = 0
+                continue
+
+            try:
+                [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
+            except ValueError:
+                # Not enough cars on lane
+                gap[lane] = 0
+                continue
+
+            gap[lane] = (front_car["x"] - back_car["x"]) % sim.length
+            new_speed[lane] = (front_car["v"] + back_car["v"]) / 2
+        max_gap = max(gap)
+        max_lane = gap.index(max_gap)
+
+        if max_lane != car["lane"] and max_gap-gap[car["lane"]] > gap_threshold:
+            traci.vehicle.slowDown(car["id"], new_speed[max_lane], duration)
+            traci.vehicle.changeLane(car["id"], max_lane, 10000)
+        else:
+            vehID = car["id"]
+
+            try:
+                [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
+            except ValueError:
+                # Not enough cars on lane
+                return
+
+            front_dist = (front_car["x"] - car["x"]) % sim.length
+            back_dist = (car["x"] - back_car["x"]) % sim.length
+
+            curr_speed = car["v"]
+            front_speed = front_car["v"]
+            follow_dist = (front_dist + back_dist) * ratio
+            delta = front_dist - follow_dist
+            # print delta, curr_speed, front_speed, curr_speed-front_speed
+            if follow_dist < front_dist and curr_speed < max_speed:
+                # speed up
+                new_speed = min(curr_speed + beta * (front_speed-curr_speed) + gain * delta + bias, max_speed)
+                traci.vehicle.slowDown(vehID, new_speed, duration) # 2.5 sec
+                # print "t=%d, FASTER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
+                #       (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
+            elif follow_dist > front_dist:
+                # slow down
+                new_speed = max(curr_speed + beta * (front_speed-curr_speed) + gain * delta + bias, 0)
+                traci.vehicle.slowDown(vehID, new_speed, duration) # 2.5 sec
+                # print "t=%d, SLOWER, %0.1f -> %0.1f (%0.1f) | d=%0.2f = %0.2f vs %0.2f" % \
+                #       (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
+
+    return carFn
+
+
 def SwitchVTypeFn(car_type, switch_point, initCarFn=None):
     """
     Switches vehicle type from initialized to car_type.
@@ -171,6 +281,7 @@ def SwitchVTypeFn(car_type, switch_point, initCarFn=None):
             traci.vehicle.setType(car["id"], car_type)
 
     return CarFn
+
 
 def SwitchFn(switchList):
     """

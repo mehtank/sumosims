@@ -14,7 +14,7 @@ if __name__ == "__main__":
     hybridParams = copy.copy(humanParams)
     hybridParams["name"] = "hybrid"
 
-    for count in [20, 25, 30, 35, 40, 45, 50]:
+    for count in [20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 80]:
 
         # IDM sweep
         if defaults.RANDOM_SEED:
