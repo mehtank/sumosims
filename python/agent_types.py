@@ -19,6 +19,18 @@ basicHumanParams = {
     # "laneChangeModel": 'LC2013',
 }
 
+# In the literature, the IDM model is used as adaptive cruise control
+basicIDMParams = {
+    "name"        : "idm",
+    "count"       :  0,
+    "maxSpeed"    :  defaults.MAX_SPEED,
+    "accel"       :   4,
+    "decel"       :   6,
+    "carFollowModel": "IDM",
+    "laneSpread"  : 0,
+    "tau"         : 0.5,
+}
+
 basicACCParams = {
     "name"        : "acc",
     "count"       :  0,
