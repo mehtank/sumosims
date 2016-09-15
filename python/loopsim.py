@@ -19,7 +19,7 @@ from plots import pcolor, pcolor_multi
 KNOWN_PARAMS = {
         "maxSpeed"      : traci.vehicletype.setMaxSpeed,
         "accel"         : traci.vehicletype.setAccel,
-        "decel"         : traci.vehicletype.setAccel,
+        "decel"         : traci.vehicletype.setDecel,
         "sigma"         : traci.vehicletype.setImperfection,
         "tau"           : traci.vehicletype.setTau,
         "speedFactor"   : traci.vehicletype.setSpeedFactor,
@@ -231,21 +231,23 @@ class LoopSim:
 if __name__ == "__main__":
     from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder, MidpointFnBuilder, SwitchFn
 
+    changeFasterLane = changeFasterLaneBuilder()
+    # changeFasterLane = changeFasterLaneBuilder(likelihood=1, speedThreshold=2)
     humanParams = {
-            "name"        : "human",
-            "count"       :  0,
-            "maxSpeed"    :  40,
-            "accel"       :   2.6,
-            "decel"       :   4.5,
-            # "function"    : randomChangeLaneFn,
-            # "function"    : changeFasterLaneBuilder(),
-            "laneSpread"  : 0,
-            "speedFactor" : 1.0,
-            "speedDev"    : 0.1,
-            "sigma"       : 0.5,
-            "tau"         : 3, # http://www.croberts.com/respon.htm
-            "laneChangeModel": 'LC2013',
-            }
+        "name"        : "human",
+        "count"       :  25,
+        "maxSpeed"    :  40,
+        "accel"       :   2.6,
+        "decel"       :   4.5,
+        # "function"    : randomChangeLaneFn,
+        "function"  : changeFasterLane,
+        "laneSpread"  : 0,
+        "speedFactor" : 1.1,
+        "speedDev"    : 0.5,
+        "sigma"       : 0.75,
+        "tau"         : 3, # http://www.croberts.com/respon.htm
+        # "laneChangeModel": 'LC2013',
+    }
 
     robotParams = {
         "name"        : "robot",
@@ -261,13 +263,13 @@ if __name__ == "__main__":
 
     hybridParams = copy.copy(humanParams)
     hybridParams["name"] = "hybrid"
-    hybridParams["count"] = 30
-    hybridParams["function"] = SwitchFn("robot", 0.5, initCarFn=randomChangeLaneFn)
+    hybridParams["count"] = 5
+    hybridParams["function"] = SwitchFn("robot", 0.5, initCarFn=changeFasterLane)
 
     opts = {
             "paramsList" : [humanParams, robotParams, hybridParams],
             "simSteps"   : 500,
-            "tag"        : "Hybrid"
+            "tag"        : "aggressiveFasterLane"
             }
 
     defaults.SIM_STEP_LENGTH = 0.5
