@@ -77,4 +77,4 @@ def parsexml(fn, edgestarts, xmax, vdefault=0):
 
         trng.append(t)
 
-    return trng, xrng, avgspeeds, lanespeeds, laneoccupancy, totfuel
+    return trng, xrng, avgspeeds, lanespeeds, (laneoccupancy, typecolors), totfuel

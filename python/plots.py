@@ -65,7 +65,7 @@ def pcolor_multi(title, (xrng, xlabel),
                   (yrng, ylabel), 
                   (vdict, vlabel), 
                   (sdict, smin, smax, slabel),
-                  (odict, olabel),
+                  (odict, olabel, otypes),
                   (fdict, flabel)):
 
     numlanes = len(sdict)
@@ -85,7 +85,7 @@ def pcolor_multi(title, (xrng, xlabel),
         ax.axis('tight')
 
         tv = T(array(odict[sid]))
-        ax2.pcolormesh(T(y), T(x), tv)
+        cx2 = ax2.pcolormesh(T(y), T(x), tv)
         ax2.axis('tight')
 
         axarr[-1,0].plot(yrng, vdict[sid], label="lane %s" % sid)
@@ -104,11 +104,15 @@ def pcolor_multi(title, (xrng, xlabel),
             horizontalalignment='center', verticalalignment='top')
     # Add colorbar
     fig.subplots_adjust(right=0.8)
-    cbar_ax = fig.add_axes([0.84, 0.1, 0.02, 0.8])
+    cbar_ax = fig.add_axes([0.84, 0.35, 0.02, 0.55])
+    cbar_ax2 = fig.add_axes([0.84, 0.1, 0.02, 0.2])
 
     ticks = linspace(smin, smax, 6)
     cbar = fig.colorbar(cax, cax=cbar_ax, ticks=ticks)
     cbar.ax.set_yticklabels(ticks)  # vertically oriented colorbar
     cbar.ax.set_ylabel(slabel, rotation=270, labelpad=20)
+
+    cb = fig.colorbar(cx2, cax=cbar_ax2, ticks=otypes.values())
+    cb.ax.set_yticklabels(otypes.keys())
 
     return plt
