@@ -63,15 +63,19 @@ def pcolor(title, (xrng, xlabel),
 
 def pcolor_multi(title, (xrng, xlabel), 
                   (yrng, ylabel), 
-                  (sdict, smin, smax, slabel)):
+                  (vdict, vlabel), 
+                  (sdict, smin, smax, slabel),
+                  (odict, olabel)):
 
     numlanes = len(sdict)
 
-    fig, axarr = plt.subplots(numlanes+1, sharex=True, figsize=(6, 8), dpi=128)
+    fig, axarr = plt.subplots(numlanes+1, 2, 
+            sharex=True, 
+            figsize=(8, 6), dpi=128)
 
     x, y = meshgrid(xrng, yrng)
 
-    for (ax, sid) in zip(axarr, sorted(sdict)):
+    for (ax, ax2, sid) in zip(axarr[:,0], axarr[:,1], sorted(sdict)):
         tv = T(array(sdict[sid]))
         cax = ax.pcolormesh(T(y), T(x), tv,
                 vmin=smin, vmax=smax, 
@@ -79,17 +83,17 @@ def pcolor_multi(title, (xrng, xlabel),
         ax.set_ylabel(xlabel)
         ax.axis('tight')
 
-        dx = T(diff(x))
-        # throws out last velocity
-        dt = dx * 1./tv[:-1,:]
-        ts = sum(diff(xrng))/sum(dt, axis=0)
-        axarr[-1].plot(yrng, ts, label="lane %s" % sid)
-        handles, labels = axarr[-1].get_legend_handles_labels()
+        tv = T(array(odict[sid]))
+        cax = ax2.pcolormesh(T(y), T(x), tv)
+        ax2.axis('tight')
+
+        axarr[-1,0].plot(yrng, vdict[sid], label="lane %s" % sid)
+        handles, labels = axarr[-1,0].get_legend_handles_labels()
         lbl = handles[-1]
         ax.set_title("lane %s" % sid, color=lbl.get_c())
 
-    axarr[-1].set_ylabel("Average loop speed (m/s)")
-    axarr[-1].set_xlabel(ylabel)
+    axarr[-1,0].set_ylabel(vlabel)
+    axarr[-1,0].set_xlabel(ylabel)
     fig.text(0.5, 0.975, title, 
             horizontalalignment='center', verticalalignment='top')
     # Add colorbar
