@@ -126,10 +126,6 @@ def MidpointFnBuilder(max_speed = 26.8, gain = 0.1, beta = 0.5, duration = 500, 
         """
         vehID = car["id"]
 
-        if step < sim.simSteps/2:
-            # changeFasterLaneBuilder()((idx, car), sim, step)
-            return
-
         try:
             [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
         except ValueError:
@@ -158,3 +154,23 @@ def MidpointFnBuilder(max_speed = 26.8, gain = 0.1, beta = 0.5, duration = 500, 
                   (step, curr_speed, new_speed, front_speed, delta, front_dist, follow_dist)
 
     return MidpointFn
+
+def SwitchFn(car_type, switch_point, initCarFn=None):
+    """
+    Switches vehicle type from initialized to car_type.
+
+    WARNING: can really only handle 1 switch, because after the switch, a
+    different CarFn will be executed instead of the one returned here.
+
+    :param car_type:
+    :param switch_point:
+    :return:
+    """
+
+    def CarFn((idx, car), sim, step):
+        if initCarFn is not None:
+            initCarFn((idx, car), sim, step)
+        if step == int(float(sim.simSteps) * switch_point):
+            traci.vehicle.setType(car["id"], car_type)
+
+    return CarFn

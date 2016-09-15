@@ -3,6 +3,7 @@ import sys
 import os
 import errno
 import random
+import copy
 
 # Make sure $SUMO_HOME/tools is in $PYTHONPATH
 from sumolib import checkBinary
@@ -228,11 +229,11 @@ class LoopSim:
 
 # this is the main entry point of this script
 if __name__ == "__main__":
-    from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder, MidpointFnBuilder
+    from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder, MidpointFnBuilder, SwitchFn
 
     humanParams = {
             "name"        : "human",
-            "count"       :  25,
+            "count"       :  0,
             "maxSpeed"    :  40,
             "accel"       :   2.6,
             "decel"       :   4.5,
@@ -242,25 +243,31 @@ if __name__ == "__main__":
             "speedFactor" : 1.0,
             "speedDev"    : 0.1,
             "sigma"       : 0.5,
-            "tau"         : 4,
+            "tau"         : 3, # http://www.croberts.com/respon.htm
+            "laneChangeModel": 'LC2013',
             }
 
     robotParams = {
-            "name"        : "robot",
-            "count"       :  25,
-            "maxSpeed"    :  40,
-            "accel"       :   4,
-            "decel"       :   6,
-            # "function"    : MidpointFnBuilder(max_speed=40, gain=0.1, beta=0.9, duration=250, bias=1.0, ratio=0.25),
-            "function"    : ACCFnBuilder(follow_sec=1.0, max_speed=40, gain=0.1, beta=0.9),
-            "laneSpread"  : 0,
-            "tau"         : 0.5,
-            }
+        "name"        : "robot",
+        "count"       :  0,
+        "maxSpeed"    :  40,
+        "accel"       :   4,
+        "decel"       :   6,
+        # "function"    : MidpointFnBuilder(max_speed=40, gain=0.1, beta=0.9, duration=250, bias=1.0, ratio=0.25),
+        "function"    : ACCFnBuilder(follow_sec=1.0, max_speed=40, gain=0.1, beta=0.9),
+        "laneSpread"  : 0,
+        "tau"         : 0.5,
+    }
+
+    hybridParams = copy.copy(humanParams)
+    hybridParams["name"] = "hybrid"
+    hybridParams["count"] = 30
+    hybridParams["function"] = SwitchFn("robot", 0.5, initCarFn=randomChangeLaneFn)
 
     opts = {
-            "paramsList" : [humanParams, robotParams],
+            "paramsList" : [humanParams, robotParams, hybridParams],
             "simSteps"   : 500,
-            "tag"        : "ACC"
+            "tag"        : "Hybrid"
             }
 
     defaults.SIM_STEP_LENGTH = 0.5
