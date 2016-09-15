@@ -77,6 +77,9 @@ def pcolor_multi(title, (xrng, xlabel),
     vax = axarr[-1,0]
     fax1 = axarr[-1,1]
     fax2 = fax1.twinx()
+    tn = max([max(max(x)) for x in odict.values()])+1
+    tmapcolors = list("kcrygbm")[:tn]
+    tmap = colors.ListedColormap(tmapcolors)
 
     x, y = meshgrid(xrng, yrng)
 
@@ -89,7 +92,7 @@ def pcolor_multi(title, (xrng, xlabel),
         ax.axis('tight')
 
         tv = T(array(odict[sid]))
-        cx2 = ax2.pcolormesh(T(y), T(x), tv)
+        cx2 = ax2.pcolormesh(T(y), T(x), tv, cmap=tmap)
         ax2.axis('tight')
 
         vax.plot(yrng, vdict[sid], label="lane %s" % sid)
