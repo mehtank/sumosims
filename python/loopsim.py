@@ -158,6 +158,7 @@ class LoopSim:
                 car["lane"] = traci.vehicle.getLaneIndex(v)
                 car["x"] = self._getX(car["edge"], position)
                 car["v"] = traci.vehicle.getSpeed(v)
+                car["f"] = traci.vehicle.getSpeedFactor(v)
                 self.allCars.append(car)
             self.allCars.sort(key=lambda x: x["x"])
 
