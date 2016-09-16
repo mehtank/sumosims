@@ -27,6 +27,7 @@ def parsexml(fn, edgestarts, xmax, vdefault=0):
 
     trng = []
     xrng = range(0, xmax)
+    looptimes = {}
     lanespeeds = {}
     laneoccupancy = {}
     avgspeeds = {}
@@ -57,27 +58,36 @@ def parsexml(fn, edgestarts, xmax, vdefault=0):
             pass
 
         for lid, thislane in lanedata.iteritems():
-            f = interp([x["x"] for x in thislane], [x["v"] for x in thislane], xmax, vdefault)
+            vf = interp([x["x"] for x in thislane], [x["v"] for x in thislane], xmax, vdefault)
+            ff = interp([x["x"] for x in thislane], [x["fuel"] for x in thislane], xmax, 0)
             types = set([x["type"] for x in thislane])
             for tp in types:
                 if tp not in typecolors:
                     typecolors[tp] = len(typecolors)+1
 
             intx = dict((int(x["x"]), typecolors[x["type"]]) for x in thislane)
-            fuel = [x["fuel"] for x in thislane]
 
-            fx = f(xrng)
-            lanespeeds.setdefault(lid, [[vdefault]*len(xrng)]*len(trng)).append(fx)
+            fuel = ff(xrng)/vf(xrng)
+
+            fx = vf(xrng)
+            lanespeeds.setdefault(lid, [[0]*len(xrng)]*len(trng)).append(fx)
             laneoccupancy.setdefault(lid, [[0]*len(xrng)]*len(trng)).append([intx.get(x, 0) for x in xrng])
 
             dx = np.diff(np.array(xrng + [xrng[0] + xmax]))
             dt = dx * 1./fx
             looptime = np.sum(dt)
             avgspeed = xmax / looptime
-            totfuelrate = np.sum(fuel)
+            loopfuel = np.sum(fuel*dx)
             avgspeeds.setdefault(lid, [vdefault]*len(trng)).append(avgspeed)
-            totfuel.setdefault(lid, [vdefault]*len(trng)).append(totfuelrate)
+            totfuel.setdefault(lid, [0]*len(trng)).append(loopfuel)
+            looptimes.setdefault(lid, [xmax * 1.0 / vdefault]*len(trng)).append(looptime)
 
         trng.append(t)
 
-    return trng, xrng, avgspeeds, lanespeeds, (laneoccupancy, typecolors), totfuel
+    '''
+    for lid, lt in looptimes.iteritems():
+        print "Total looptime, lane %s:" % lid, np.mean(lt[100:]), np.percentile(lt[100:], (0, 25, 75, 100))
+    for lid, ft in totfuel.iteritems():
+        print "Total fuel consumed, lane %s:" % lid, np.mean(ft[100:]), np.percentile(ft[100:], (0, 25, 75, 100))
+    '''
+    return trng, xrng, avgspeeds, lanespeeds, (laneoccupancy, typecolors), totfuel, looptimes
