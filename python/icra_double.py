@@ -27,6 +27,9 @@ if __name__ == "__main__":
     gParams = fillGapMidpointParams
     gParams["laneSpread"] = 0
 
+    aParams = ACCParams
+    aParams["laneSpread"] = 0
+
     for sigma in (0.5, 0.9):
         vTypeParams["sigma"] = sigma
 
@@ -47,7 +50,7 @@ if __name__ == "__main__":
 
         for numRobots, rParams in itertools.product(\
                 (1, 5, 11, 22), \
-                (mParams, gParams)):
+                (mParams, gParams, aParams)):
 
             vTypeParams["count"] = (22-numRobots) 
             rParams["count"] = numRobots 
