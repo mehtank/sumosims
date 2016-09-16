@@ -170,7 +170,7 @@ def FillGapFnBuilder(duration=500, gap_back=10, gap_forward=5, gap_threshold=10)
                 continue
 
             try:
-                [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
+                [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=lane)
             except ValueError:
                 # Not enough cars on lane
                 gap[lane] = 0
@@ -215,7 +215,7 @@ def FillGapMidpointFnBuilder(duration=500, gap_back=10, gap_forward=5,
                 continue
 
             try:
-                [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=car["lane"])
+                [back_car, front_car] = sim.getCars(idx, numBack=1, numForward=1, lane=lane)
             except ValueError:
                 # Not enough cars on lane
                 gap[lane] = 0
