@@ -86,6 +86,10 @@ def parsexml(fn, edgestarts, xmax, vdefault=0):
             avgspeed = np.mean(vf(xrng))
             looptime = xmax/avgspeed
             loopfuel = np.mean([x["fuel"] for x in thislane])*looptime
+
+            # XXX Quick hack : Plot variance of velocity instead.
+            loopfuel = np.var([x["v"] for x in thislane])
+
             avgspeeds.setdefault(lid, [vdefault]*len(trng)).append(avgspeed)
             totfuel.setdefault(lid, [0]*len(trng)).append(loopfuel)
             looptimes.setdefault(lid, [xmax * 1.0 / vdefault]*len(trng)).append(looptime)
