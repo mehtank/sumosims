@@ -4,8 +4,8 @@ from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder,\
     MidpointFnBuilder, SwitchVTypeFn, FillGapFnBuilder, FillGapMidpointFnBuilder
 import config as defaults
 
-changeFasterLane = changeFasterLaneBuilder()
-# changeFasterLane = changeFasterLaneBuilder(likelihood=1, speedThreshold=2)
+# changeFasterLane = changeFasterLaneBuilder()
+changeFasterLane = changeFasterLaneBuilder(likelihood=1, speedThreshold=1)
 basicHumanParams = {
     "name"        : "human",
     "count"       :  0,
