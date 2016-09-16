@@ -84,21 +84,22 @@ def pcolor_multi(title, (xrng, xlabel),
 
     numlanes = len(sdict)
 
-    fig, axarr = plt.subplots(numlanes+1, 2, 
-            figsize=(16, 9), dpi=100)
+    fig, axarr = plt.subplots(numlanes+2, 2, 
+            figsize=(16, 16), dpi=100)
 
+    axarr[-2,0].axis('off')
+    axarr[-2,1].axis('off')
     vax = axarr[-1,0]
     fax = axarr[-1,1]
 
     x, y = np.meshgrid(xrng, yrng)
 
-    for (ax, ax2, sid) in zip(axarr[:,0], axarr[:,1], sorted(sdict)):
+    for (ax2, ax, sid) in zip(axarr[:,0], axarr[:,1], sorted(sdict)):
         tv = T(np.array(sdict[sid]))
         cax = ax.pcolormesh(T(y), T(x), tv,
                 vmin=smin, vmax=smax, 
                 cmap=my_cmap)
-        ax.set_ylabel(xlabel)
-        ax.set_xlabel(ylabel)
+        ax.set_ylabel(xlabel + "\nLane %s"%sid)
         ax.axis('tight')
 
         vmn = np.min(tv, axis=0)
@@ -111,17 +112,21 @@ def pcolor_multi(title, (xrng, xlabel),
         handles, labels = fax.get_legend_handles_labels()
         lbl = handles[-1]
         linecolor = lbl.get_c()
-        ax.set_title("lane %s" % sid, color=linecolor)
+        linecolor = 'b'
+        #fig.text(0.5, 0.95, 'Lane %s'%s, transform=fig.transFigure, horizontalalignment='center')
+        #ax.set_title("lane %s" % sid, color=linecolor, x=-0.1)
 
         lc = colors.colorConverter.to_rgba(linecolor, alpha=0.1)
         ax2.fill_between(yrng, vmn, vmx, color=lc)
         lc = colors.colorConverter.to_rgba(linecolor, alpha=0.25)
         ax2.fill_between(yrng, v25, v75, color=lc)
-        ax2.plot(yrng, vdict[sid], label="lane %s" % sid)
+        ax2.plot(yrng, vdict[sid], label="lane %s" % sid, color=linecolor)
 
-        ax2.set_ylabel(vlabel)
+        ax2.set_ylabel(vlabel + "\nLane %s"%sid)
         ax2.set_ylim([smin, smax])
-        ax2.set_xlabel(ylabel)
+
+    ax.set_xlabel(ylabel)
+    ax2.set_xlabel(ylabel)
 
     boxplotdata1 = [[]]
     boxplotdata2 = [[]]
@@ -156,11 +161,13 @@ def pcolor_multi(title, (xrng, xlabel),
     if fmin is not None and fmax is not None:
         fax.set_ylim([fmin, fmax])
     fax.set_xlabel(ylabel)
+    '''
     fig.text(0.5, 0.975, title, 
             horizontalalignment='center', verticalalignment='top')
+    '''
     # Add colorbar
     fig.subplots_adjust(right=0.85)
-    cbar_ax = fig.add_axes([0.89, 0.1, 0.02, 0.8])
+    cbar_ax = fig.add_axes([0.89, 0.52, 0.02, 0.38])
 
     ticks = np.linspace(smin, smax, 6)
     cbar = fig.colorbar(cax, cax=cbar_ax, ticks=ticks)
