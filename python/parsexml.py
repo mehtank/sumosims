@@ -67,17 +67,25 @@ def parsexml(fn, edgestarts, xmax, vdefault=0):
 
             intx = dict((int(x["x"]), typecolors[x["type"]]) for x in thislane)
 
+            '''
             fuel = ff(xrng)/vf(xrng)
+            '''
 
             fx = vf(xrng)
             lanespeeds.setdefault(lid, [[0]*len(xrng)]*len(trng)).append(fx)
             laneoccupancy.setdefault(lid, [[0]*len(xrng)]*len(trng)).append([intx.get(x, 0) for x in xrng])
 
+            '''
             dx = np.diff(np.array(xrng + [xrng[0] + xmax]))
             dt = dx * 1./fx
             looptime = np.sum(dt)
             avgspeed = xmax / looptime
             loopfuel = np.sum(fuel*dx)
+            '''
+
+            avgspeed = np.mean(vf(xrng))
+            looptime = xmax/avgspeed
+            loopfuel = np.mean([x["fuel"] for x in thislane])*looptime
             avgspeeds.setdefault(lid, [vdefault]*len(trng)).append(avgspeed)
             totfuel.setdefault(lid, [0]*len(trng)).append(loopfuel)
             looptimes.setdefault(lid, [xmax * 1.0 / vdefault]*len(trng)).append(looptime)
