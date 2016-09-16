@@ -16,16 +16,16 @@ if __name__ == "__main__":
     sim = LoopSim("loopsim", length=230, numLanes=numLanes, simStepLength=0.5)
 
     vTypeParams = humanParams
-    vTypeParams["laneSpread"] = True
+    vTypeParams["laneSpread"] = 0
     vTypeParams["tau"] = 0.5
-    vTypeParams["speedDev"] = 0.0
+    vTypeParams["speedDev"] = 0.1
     vTypeParams["speedFactor"] = 1
 
     mParams = midpointParams
-    mParams["laneSpread"] = True
+    mParams["laneSpread"] = 0
 
     gParams = fillGapMidpointParams
-    gParams["laneSpread"] = True
+    gParams["laneSpread"] = 0
 
     for sigma in (0.5, 0.9):
         vTypeParams["sigma"] = sigma
