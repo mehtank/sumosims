@@ -11,7 +11,7 @@ from agent_types import basicHumanParams as humanParams, \
 
 
 if __name__ == "__main__":
-    numLanes = 2
+    numLanes = 1
 
     sim = LoopSim("loopsim", length=230, numLanes=numLanes, simStepLength=0.5)
 
@@ -34,4 +34,4 @@ if __name__ == "__main__":
         }
 
         sim.simulate(opts)
-        sim.plot(show=True, save=False, speedRange=(0,30), fuelRange=(0, 40)).close("all")
+        sim.plot(show=False, save=True, speedRange=(0,8), fuelRange=(0, 40)).close("all")
