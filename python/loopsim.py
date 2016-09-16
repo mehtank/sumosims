@@ -207,8 +207,7 @@ class LoopSim:
 
         if self.label is None:
             self.label = "-".join([x["name"] + "%03d" % x["count"] 
-                                        for x in paramsList 
-                                        if x["count"] > 0])
+                                        for x in paramsList])
         if tag is not None:
             self.label += "-" + tag
 
