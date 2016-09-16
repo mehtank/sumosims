@@ -20,52 +20,18 @@ if __name__ == "__main__":
     vTypeParams["tau"] = 0.5
     vTypeParams["speedDev"] = 0.0
     vTypeParams["speedFactor"] = 1
+    vTypeParams["sigma"] = 0.5
+    vTypeParams["count"] = 22
 
-    mParams = midpointParams
-    mParams["laneSpread"] = True
+    if defaults.RANDOM_SEED:
+        print "Setting random seed to ", defaults.RANDOM_SEED
+        random.seed(defaults.RANDOM_SEED)
 
-    gParams = fillGapMidpointParams
-    gParams["laneSpread"] = True
+        opts = {
+            "paramsList" : [vTypeParams],
+            "simSteps"   : 500,
+            "tag"        : "Sugiyama",
+        }
 
-    for sigma in (0.5, 0.9):
-        vTypeParams["sigma"] = sigma
-
-        vTypeParams["count"] = 22
-        if defaults.RANDOM_SEED:
-            print "Setting random seed to ", defaults.RANDOM_SEED
-            random.seed(defaults.RANDOM_SEED)
-
-        for run in range(3):
-            opts = {
-                "paramsList" : [vTypeParams],
-                "simSteps"   : 500,
-                "tag"        : "Sugiyama-sigma=%03f-run=%d" % (sigma, run),
-            }
-
-            sim.simulate(opts)
-            sim.plot(show=False, save=True, speedRange=(0,30), fuelRange=(0, 40)).close("all")
-
-        for numRobots, rParams in itertools.product(\
-                (1, 5, 11, 22), \
-                (mParams, gParams)):
-
-            vTypeParams["count"] = (22-numRobots) 
-            rParams["count"] = numRobots 
-
-            if defaults.RANDOM_SEED:
-                print ">>> Setting random seed to ", defaults.RANDOM_SEED
-                random.seed(defaults.RANDOM_SEED)
-
-            for run in range(3):
-                opts = {
-                    "paramsList" : [vTypeParams, rParams],
-                    "simSteps"   : 500,
-                    "tag"        : "Sugiyama-sigma=%03f-run=%d" % (sigma, run),
-                }
-
-                print "***"
-                print "sigma =", sigma, "numRobots = ", numRobots, 
-                print "robot type =", rParams["name"], "run = ", run
-                print "***"
-                sim.simulate(opts)
-                sim.plot(show=False, save=True, speedRange=(0,30), fuelRange=(0, 40)).close("all")
+        sim.simulate(opts)
+        sim.plot(show=True, save=False, speedRange=(0,30), fuelRange=(0, 40)).close("all")
