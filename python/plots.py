@@ -123,16 +123,18 @@ def pcolor_multi(title, (xrng, xlabel),
         ax2.set_ylim([smin, smax])
         ax2.set_xlabel(ylabel)
 
-    boxplotdata1 = []
-    boxplotdata2 = []
-    boxplotpos1 = []
-    boxplotpos2 = []
-    boxplotlabels = []
-    bp = 1
+    boxplotdata1 = [[]]
+    boxplotdata2 = [[]]
+    boxplotpos1 = [1]
+    boxplotpos2 = [2]
+    boxplotlabels = ["All lanes"]
+    bp = 4
     for lid in sorted(ldict):
         #boxplotdata.append(lt)
         lt = ldict[lid]
         ft = fdict[lid]
+        boxplotdata1[0].extend(lt[len(lt)/2:])
+        boxplotdata2[0].extend(ft[len(ft)/2:])
         boxplotdata1.append(lt[len(lt)/2:])
         boxplotdata2.append(ft[len(ft)/2:])
         boxplotlabels.append("lane %s" % lid)
