@@ -167,7 +167,17 @@ def pcolor_multi(title, (xrng, xlabel),
     '''
     # Add colorbar
     fig.subplots_adjust(right=0.85)
-    cbar_ax = fig.add_axes([0.89, 0.52, 0.02, 0.38])
+    if numlanes == 2:
+        cbm = 0.52
+        cbl = 0.38
+    elif numlanes == 1:
+        cbm=0.665
+        cbl=0.235
+    else:
+        cbm=0.1
+        cbl=0.8
+
+    cbar_ax = fig.add_axes([0.89, cbm, 0.02, cbl])
 
     ticks = np.linspace(smin, smax, 6)
     cbar = fig.colorbar(cax, cax=cbar_ax, ticks=ticks)
