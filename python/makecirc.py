@@ -1,4 +1,7 @@
+import subprocess
+import sys
 from lxml import etree
+from numpy import pi, sin, cos, linspace
 
 import config as defaults
 
@@ -15,31 +18,45 @@ def makexml(name, nsl):
 def printxml(t, fn):
     etree.ElementTree(t).write(fn, pretty_print=True, encoding='UTF-8', xml_declaration=True) 
 
-def makenet(base, length, lanes, speedLimit=defaults.SPEED_LIMIT, path=""):
-    import subprocess
-    import sys
+def makenet(base, length, lanes, 
+        speedLimit=defaults.SPEED_LIMIT, 
+        path=""):
 
-    name = "%s-%dm-%dl" % (base, length, lanes)
+    name = "%s-%dm%dl" % (base, length, lanes)
 
     nodfn = "%s.nod.xml" % name
     edgfn = "%s.edg.xml" % name
     typfn = "%s.typ.xml" % name
     cfgfn = "%s.netccfg" % name
     netfn = "%s.net.xml" % name
-    l4 = length/4.
+
+    r = length/pi
+    edgelen = length/4.
 
     x = makexml("nodes", "http://sumo.dlr.de/xsd/nodes_file.xsd")
-    x.append(E("node", id="bottom-left", x=repr(0), y=repr(0)))
-    x.append(E("node", id="bottom-right", x=repr(l4), y=repr(0)))
-    x.append(E("node", id="top-right", x=repr(l4), y=repr(l4)))
-    x.append(E("node", id="top-left", x=repr(0), y=repr(l4)))
+    x.append(E("node", id="bottom",x=repr(0), y=repr(-r)))
+    x.append(E("node", id="right", x=repr(r), y=repr(0)))
+    x.append(E("node", id="top",   x=repr(0), y=repr(r)))
+    x.append(E("node", id="left",  x=repr(-r),y=repr(0)))
     printxml(x, path+nodfn)
 
     x = makexml("edges", "http://sumo.dlr.de/xsd/edges_file.xsd")
-    x.append(E("edge", attrib={"id":"bottom", "from":"bottom-left",  "to":"bottom-right", "type":"edgeType"}))
-    x.append(E("edge", attrib={"id":"right",  "from":"bottom-right", "to":"top-right",    "type":"edgeType"}))
-    x.append(E("edge", attrib={"id":"top",    "from":"top-right",    "to":"top-left",     "type":"edgeType"}))
-    x.append(E("edge", attrib={"id":"left",   "from":"top-left",     "to":"bottom-left",  "type":"edgeType"}))
+    x.append(E("edge", attrib={"id":"bottom", "from":"bottom","to":"right", "type":"edgeType", 
+        "shape": " ".join(["%.2f,%.2f" % ( r*cos(t), r*sin(t) )
+                for t in linspace(-pi/2,0,defaults.RESOLUTION)]),
+        "length": repr(edgelen)}))
+    x.append(E("edge", attrib={"id":"right",  "from":"right", "to":"top",   "type":"edgeType",
+        "shape": " ".join(["%.2f,%.2f" % ( r*cos(t), r*sin(t) )
+                for t in linspace(0,pi/2,defaults.RESOLUTION)]),
+        "length": repr(edgelen)}))
+    x.append(E("edge", attrib={"id":"top",    "from":"top",   "to":"left",  "type":"edgeType",
+        "shape": " ".join(["%.2f,%.2f" % ( r*cos(t), r*sin(t) )
+                for t in linspace(pi/2,pi,defaults.RESOLUTION)]),
+        "length": repr(edgelen)}))
+    x.append(E("edge", attrib={"id":"left",   "from":"left",  "to":"bottom","type":"edgeType",
+        "shape": " ".join(["%.2f,%.2f" % ( r*cos(t), r*sin(t) )
+                for t in linspace(pi,3*pi/2,defaults.RESOLUTION)]),
+        "length": repr(edgelen)}))
     printxml(x, path+edgfn)
 
     x = makexml("types", "http://sumo.dlr.de/xsd/types_file.xsd")
