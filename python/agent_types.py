@@ -5,7 +5,7 @@ from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder,\
 import config as defaults
 
 # changeFasterLane = changeFasterLaneBuilder()
-changeFasterLane = changeFasterLaneBuilder(likelihood=1, speedThreshold=1)
+changeFasterLane = changeFasterLaneBuilder(likelihood_mult=0.5, speedThreshold=2)
 basicHumanParams = {
     "name"        : "human",
     "count"       :  0,
@@ -51,7 +51,7 @@ basicFillGapMidpointParams = copy.copy(basicRobotParams)
 basicFillGapMidpointParams["name"] = "fillgapmidpoint"
 basicFillGapMidpointParams["function"] = \
     FillGapMidpointFnBuilder(max_speed=40, gain=0.1, beta=0.9, duration=250,
-                             bias=1.0, ratio=0.25)
+                             bias=1.0, ratio=0.25, gap_threshold=10)
 
 basicMidpointParams = copy.copy(basicRobotParams)
 basicMidpointParams["name"] = "midpoint"
