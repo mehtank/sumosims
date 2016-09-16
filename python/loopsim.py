@@ -253,7 +253,7 @@ class LoopSim:
                 (avgspeeds, "Average loop speed (m/s)"),
                 (lanespeeds, mnspeed, mxspeed, "Speed (m/s)"),
                 (looptimes, "Loop transit time (s)"),
-                (totfuel, mnfuel, mxfuel, "Fuel consumption (mL/loop)"))
+                (totfuel, mnfuel, mxfuel, "Speed std. dev. (m/s)"))
 
         fig = plt.gcf()
         if show:
