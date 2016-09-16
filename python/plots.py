@@ -156,6 +156,7 @@ def pcolor_multi(title, (xrng, xlabel),
     vax.set_xticklabels([""] + boxplotlabels)
     vax.set_xticks([0] + [x*3+1.5 for x in range(len(boxplotlabels))])
     vax2.set_xticks([0] + [x*3+1.5 for x in range(len(boxplotlabels))])
+    vax.set_title(title)
 
     fax.set_ylabel(flabel)
     if fmin is not None and fmax is not None:
