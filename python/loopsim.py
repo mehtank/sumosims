@@ -70,7 +70,7 @@ class LoopSim:
         self.data_path = ensure_dir("%s" % defaults.DATA_PATH)
         self.img_path = ensure_dir("%s" % defaults.IMG_PATH)
 
-    def _simInit(self, suffix, typeList):
+    def _simInit(self, suffix, typeList, sumo):
         self.cfgfn, self.outs = makecirc(self.name+suffix, 
                 netfn=self.netfn, 
                 numcars=0, 
@@ -78,7 +78,7 @@ class LoopSim:
                 dataprefix = defaults.DATA_PATH)
 
         # Start simulator
-        sumoBinary = checkBinary('sumo')
+        sumoBinary = checkBinary(sumo)
         self.sumoProcess = subprocess.Popen([
                 sumoBinary, 
                 "--step-length", repr(self.simStepLength),
@@ -198,7 +198,7 @@ class LoopSim:
         return ret
 
 
-    def simulate(self, opts):
+    def simulate(self, opts, sumo=defaults.BINARY):
 
         self.label = opts.get("label", None)
         tag = opts.get("tag", None)
@@ -212,7 +212,7 @@ class LoopSim:
         if tag is not None:
             self.label += "-" + tag
 
-        self._simInit("-" + self.label, [x["name"] for x in paramsList])
+        self._simInit("-" + self.label, [x["name"] for x in paramsList], sumo)
         self._addTypes(paramsList)
         self._addCars(paramsList)
         self._run(self.simSteps)
