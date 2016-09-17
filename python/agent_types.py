@@ -8,6 +8,7 @@ import config as defaults
 changeFasterLane = changeFasterLaneBuilder(likelihood_mult=0.5, speedThreshold=2)
 basicHumanParams = {
     "name"        : "human",
+    "shape"       : "passenger",
     "count"       :  0,
     "maxSpeed"    :  defaults.MAX_SPEED,
     "accel"       :   2.6,
@@ -24,6 +25,7 @@ basicHumanParams = {
 
 basicRobotParams = {
     "name"        : "robot",
+    "shape"       : "evehicle",
     "count"       :  0,
     "maxSpeed"    :  defaults.MAX_SPEED,
     "accel"       :   4,

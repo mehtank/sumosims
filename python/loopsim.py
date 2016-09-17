@@ -25,6 +25,7 @@ KNOWN_PARAMS = {
         "tau"           : traci.vehicletype.setTau,
         "speedFactor"   : traci.vehicletype.setSpeedFactor,
         "speedDev"      : traci.vehicletype.setSpeedDeviation,
+        "shape"         : traci.vehicletype.setShapeClass,
         }
 
 if defaults.RANDOM_SEED:
