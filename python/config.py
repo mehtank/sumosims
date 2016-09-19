@@ -2,7 +2,7 @@
 RANDOM_SEED = 23434
 
 # Number of waypoinst around circular curve
-RESOLUTION = 20
+RESOLUTION = 40
 
 # the name of the sumo binary
 BINARY = 'sumo'
@@ -16,6 +16,7 @@ SIM_STEP_LENGTH = 1.0
 NET_PATH = "net/"
 IMG_PATH = "img/"
 DATA_PATH = "data/"
+VID_PATH = "video/"
 
 # Roadway speed limit
 # 30 m/s = 67.1081 mph

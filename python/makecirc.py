@@ -89,6 +89,7 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=0, typelist=None, maxt=3000,
     roufn = "%s.rou.xml" % name
     addfn = "%s.add.xml" % name
     cfgfn = "%s.sumo.cfg" % name
+    guifn = "%s.gui.cfg" % name
 
     def rerouter(name, frm, to):
         t = E("rerouter", id=name, edges=frm)
@@ -103,7 +104,7 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=0, typelist=None, maxt=3000,
     def flow(name, number, vtype, route, **kwargs):
         return E("flow", id=name, number=repr(number), route=route, type=vtype, **kwargs)
 
-    def inputs(name, net=None, rou=None, add=None):
+    def inputs(name, net=None, rou=None, add=None, gui=None):
         inp = E("input")
         if net is not False:
             if net is None:
@@ -120,6 +121,11 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=0, typelist=None, maxt=3000,
                 inp.append(E("additional-files", value="%s.add.xml" % name))
             else:
                 inp.append(E("additional-files", value=add))
+        if gui is not False:
+            if gui is None:
+                inp.append(E("gui-settings-file", value="%s.gui.xml" % name))
+            else:
+                inp.append(E("gui-settings-file", value=gui))
         return inp
 
     def outputs(name, prefix="data/"):
@@ -162,8 +168,12 @@ def makecirc(name, netfn=None, maxspeed=30, numcars=0, typelist=None, maxt=3000,
     else:
         roufn=False
 
+    gui = E("viewsettings")
+    gui.append(E("scheme", name="real world"))
+    printxml(gui, guifn)
+
     cfg = makexml("configuration", "http://sumo.dlr.de/xsd/sumoConfiguration.xsd")
-    cfg.append(inputs(name, net=netfn, add=addfn, rou=roufn))
+    cfg.append(inputs(name, net=netfn, add=addfn, rou=roufn, gui=guifn))
     t, outs = outputs(name, prefix=dataprefix)
     cfg.append(t)
     t = E("time")

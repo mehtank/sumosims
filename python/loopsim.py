@@ -70,9 +70,10 @@ class LoopSim:
         self.net_path = ensure_dir("%s" % defaults.NET_PATH)
         self.data_path = ensure_dir("%s" % defaults.DATA_PATH)
         self.img_path = ensure_dir("%s" % defaults.IMG_PATH)
+        self.vid_path = ensure_dir("%s" % defaults.VID_PATH)
 
-    def _simInit(self, suffix, typeList, sumo, sublane):
-        self.cfgfn, self.outs = makecirc(self.name+suffix, 
+    def _simInit(self, typeList, sumo, sublane):
+        self.cfgfn, self.outs = makecirc(self.name+"-"+self.label, 
                 netfn=self.netfn, 
                 numcars=0, 
                 typelist=typeList,
@@ -158,11 +159,11 @@ class LoopSim:
 
         v = car["v"]
         if v < mn:
-            # black
-            color = (0,0,0,0) 
+            # blue because black doesn't show up against the road
+            color = (0,0,255,0) 
         elif v < mn + dv5:
-            # black to red
-            color = (255.*(v-mn)/dv5, 0, 0, 0)
+            # blue to red
+            color = (255.*(v-mn)/dv5, 0, 255.*(mn+dv5-v)/dv5, 0)
         elif v < mn + 3*dv5:
             # red to yellow
             color = (255, 255.*(v-mn-dv5)/(2*dv5), 0, 0)
@@ -175,7 +176,8 @@ class LoopSim:
 
         traci.vehicle.setColor(car["id"], color)
 
-    def _run(self, simSteps, speedRange):
+    def _run(self, simSteps, speedRange, sumo):
+        vid_path = ensure_dir("%s/%s" % (self.vid_path, self.name+"-"+self.label))
         for step in range(simSteps):
             traci.simulationStep()
             self.allCars = []
@@ -198,6 +200,8 @@ class LoopSim:
                 carFn = self.carFns[car["type"]]
                 if carFn is not None:
                     carFn((idx, car), self, step)
+            if sumo == "sumo-gui":
+                traci.gui.screenshot("View #0", "%s/%08d.png" % (vid_path, step))
 
         traci.close()
         sys.stdout.flush()
@@ -244,10 +248,10 @@ class LoopSim:
         if tag is not None:
             self.label += "-" + tag
 
-        self._simInit("-" + self.label, [x["name"] for x in paramsList], sumo, sublane)
+        self._simInit([x["name"] for x in paramsList], sumo, sublane)
         self._addTypes(paramsList)
         self._addCars(paramsList)
-        self._run(self.simSteps, speedRange)
+        self._run(self.simSteps, speedRange, sumo)
 
     def plot(self, show=True, save=False, speedRange=None, fuelRange=None):
         # Plot results
