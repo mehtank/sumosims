@@ -71,7 +71,7 @@ class LoopSim:
         self.data_path = ensure_dir("%s" % defaults.DATA_PATH)
         self.img_path = ensure_dir("%s" % defaults.IMG_PATH)
 
-    def _simInit(self, suffix, typeList, sumo):
+    def _simInit(self, suffix, typeList, sumo, sublane):
         self.cfgfn, self.outs = makecirc(self.name+suffix, 
                 netfn=self.netfn, 
                 numcars=0, 
@@ -80,12 +80,15 @@ class LoopSim:
 
         # Start simulator
         sumoBinary = checkBinary(sumo)
-        self.sumoProcess = subprocess.Popen([
+        sumoProcessArgs = [
                 sumoBinary, 
                 "--step-length", repr(self.simStepLength),
                 "--no-step-log",
                 "-c", self.cfgfn,
-                "--remote-port", str(self.port)], 
+                "--remote-port", str(self.port)]
+        if sublane:
+            sumoProcessArgs.extend(["--lateral-resolution", "5"])
+        self.sumoProcess = subprocess.Popen(sumoProcessArgs,
             stdout=sys.stdout, stderr=sys.stderr)
 
         # Initialize TraCI
@@ -146,7 +149,33 @@ class LoopSim:
 
         self.carNames = cars.keys()
 
-    def _run(self, simSteps):
+    def _setCarColor(self, car, speedRange):
+        if speedRange is None:
+            mn, mx = 0, self.maxSpeed
+        else:
+            mn, mx = speedRange
+        dv5 = (mx-mn)/5.
+
+        v = car["v"]
+        if v < mn:
+            # black
+            color = (0,0,0,0) 
+        elif v < mn + dv5:
+            # black to red
+            color = (255.*(v-mn)/dv5, 0, 0, 0)
+        elif v < mn + 3*dv5:
+            # red to yellow
+            color = (255, 255.*(v-mn-dv5)/(2*dv5), 0, 0)
+        elif v < mx:
+            # yellow to green
+            color = (255.*(mx-v)/(2*dv5), 255, 0, 0)
+        else:
+            # green
+            color = (0, 255, 0, 0)
+
+        traci.vehicle.setColor(car["id"], color)
+
+    def _run(self, simSteps, speedRange):
         for step in range(simSteps):
             traci.simulationStep()
             self.allCars = []
@@ -159,11 +188,13 @@ class LoopSim:
                 car["lane"] = traci.vehicle.getLaneIndex(v)
                 car["x"] = self._getX(car["edge"], position)
                 car["v"] = traci.vehicle.getSpeed(v)
+                car["maxv"] = traci.vehicle.getMaxSpeed(v)
                 car["f"] = traci.vehicle.getSpeedFactor(v)
                 self.allCars.append(car)
             self.allCars.sort(key=lambda x: x["x"])
 
             for (idx, car) in enumerate(self.allCars):
+                self._setCarColor(car, speedRange)
                 carFn = self.carFns[car["type"]]
                 if carFn is not None:
                     carFn((idx, car), self, step)
@@ -199,7 +230,7 @@ class LoopSim:
         return ret
 
 
-    def simulate(self, opts, sumo=defaults.BINARY):
+    def simulate(self, opts, sumo=defaults.BINARY, speedRange=None, sublane=False):
 
         self.label = opts.get("label", None)
         tag = opts.get("tag", None)
@@ -213,10 +244,10 @@ class LoopSim:
         if tag is not None:
             self.label += "-" + tag
 
-        self._simInit("-" + self.label, [x["name"] for x in paramsList], sumo)
+        self._simInit("-" + self.label, [x["name"] for x in paramsList], sumo, sublane)
         self._addTypes(paramsList)
         self._addCars(paramsList)
-        self._run(self.simSteps)
+        self._run(self.simSteps, speedRange)
 
     def plot(self, show=True, save=False, speedRange=None, fuelRange=None):
         # Plot results
