@@ -1,4 +1,5 @@
 import random
+import copy
 
 import config as defaults
 from loopsim import LoopSim
@@ -10,27 +11,41 @@ from agent_types import basicHumanParams as humanParams, \
 
 
 if __name__ == "__main__":
-    vTypeParams = humanParams
-    vTypeParams["laneSpread"] = 0
-    vTypeParams["tau"] = 0.5
-    vTypeParams["speedDev"] = 0.1
-    vTypeParams["speedFactor"] = 1
+    globalLaneSpread = 0
+
+    hParams = humanParams
+    hParams["laneSpread"] = globalLaneSpread
+    hParams["tau"] = 2
+    hParams["speedDev"] = 0.2
+    hParams["speedFactor"] = 1.1
+    hParams["minGap"] = 1
+
+    hParams1 = copy.copy(humanParams)
+    hParams1["name"] = "human1"
+    hParams1["laneSpread"] = 1
+    hParams1["tau"] = 2
+    hParams1["speedDev"] = 0.4
+    hParams1["speedFactor"] = 1.2
+    hParams1["count"] = 0
 
     mParams = midpointParams
-    mParams["laneSpread"] = 0
+    mParams["laneSpread"] = globalLaneSpread
+    # mParams["tau"] = 0.1
 
     gParams = fillGapMidpointParams
-    gParams["laneSpread"] = 0
+    gParams["laneSpread"] = globalLaneSpread
+    # gParams["tau"] = 0.1
 
     aParams = ACCParams
-    aParams["laneSpread"] = 0
+    aParams["laneSpread"] = globalLaneSpread
+    # aParams["tau"] = 0.1
 
     ###############
     # Option ranges
     ###############
 
-    numLanes = 2
-    totVehicles = 22
+    numLanes = 1
+    totVehicles = 11
 
     '''
     sigmaValues = [0.5, 0.9]
@@ -39,12 +54,14 @@ if __name__ == "__main__":
     robotTypes = (mParams, gParams, aParams)
     '''
 
-    sigmaValues = [0.9]
+    sigmaValues = [0.5]
     numRobotsValues = [0, 1]
     numRuns = 1
     robotTypes = [gParams]
 
-    fps = 24
+    # WARNING SUMO can't really handle more than 2 fps, probably due to limitations of underlying car following models
+    # TODO(cathywu) develop our own high resolution car following models?
+    fps = 2
     simStepLength = 1./fps
     simTime = 100
     simSteps = int(simTime/simStepLength)
@@ -53,9 +70,9 @@ if __name__ == "__main__":
     for sigma in sigmaValues:
         for numRobots in numRobotsValues:
             for rParams in robotTypes:
-                vTypeParams["sigma"] = sigma
-                vTypeParams["count"] = (totVehicles-numRobots) 
-                rParams["count"] = numRobots 
+                hParams["sigma"] = sigma
+                hParams["count"] = (totVehicles-numRobots)
+                rParams["count"] = numRobots
 
                 if defaults.RANDOM_SEED:
                     print ">>> Setting random seed to ", defaults.RANDOM_SEED
@@ -63,7 +80,7 @@ if __name__ == "__main__":
 
                 for run in range(numRuns):
                     opts = {
-                        "paramsList" : [vTypeParams, rParams],
+                        "paramsList" : [hParams, hParams1, rParams],
                         "simSteps"   : simSteps,
                         "tag"        : "Sugiyama-sigma=%03f-run=%d" % (sigma, run),
                     }
@@ -72,8 +89,9 @@ if __name__ == "__main__":
                     print "sigma =", sigma, "numRobots = ", numRobots, 
                     print "robot type =", rParams["name"], "run = ", run
                     print "***"
-                    speedRange = (0,30)
-                    sim.simulate(opts, sumo='sumo-gui', speedRange=speedRange, sublane=False)
+                    speedRange = (0, 30)
+                    sim.simulate(opts, sumo='sumo', speedRange=speedRange, sublane=False)
+                    # sim.simulate(opts, sumo='sumo-gui', speedRange=speedRange, sublane=False)
                     sim.plot(show=False, save=True, speedRange=speedRange).close("all")
                 if numRobots == 0:
                     break

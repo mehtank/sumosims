@@ -12,7 +12,7 @@ def randomChangeLaneFn((idx, car), sim, step):
 
 def changeFasterLaneBuilder(speedThreshold = 5, likelihood_mult = 0.5, 
                             dxBack = 0, dxForward = 60, 
-                            gapBack = 10, gapForward = 5):
+                            gapBack = 10, gapForward = 5, bias=0):
     """
     Intelligent lane changer
     :param speedThreshold: minimum speed increase required
@@ -21,6 +21,7 @@ def changeFasterLaneBuilder(speedThreshold = 5, likelihood_mult = 0.5,
     :param dxForward: Farthest distance forward car can see
     :param gapBack: Minimum required clearance behind car 
     :param gapForward: Minimum required clearance in front car 
+    :param bias: additive speed bias term (m/s)
     :return: carFn to input to a carParams
     """
     def carFn((idx, car), sim, step):
@@ -32,7 +33,7 @@ def changeFasterLaneBuilder(speedThreshold = 5, likelihood_mult = 0.5,
                 continue
             cars = sim.getCars(idx, dxBack=dxBack, dxForward=dxForward, lane=lane)
             if len(cars) > 0:
-                v[lane] = mean([c["v"] for c in cars])
+                v[lane] = mean([c["v"] for c in cars]) + bias
             else:
                 v[lane] = traci.vehicle.getMaxSpeed(car["id"])
         maxv = max(v)
