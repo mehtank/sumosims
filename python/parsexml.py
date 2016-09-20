@@ -58,6 +58,7 @@ def parsexml(fn, edgestarts, xmax, vdefault=0):
             pass
 
         for lid, thislane in lanedata.iteritems():
+            # interpolate the values of velocity, fuel to get a _f_unction of loop position
             vf = interp([x["x"] for x in thislane], [x["v"] for x in thislane], xmax, vdefault)
             ff = interp([x["x"] for x in thislane], [x["fuel"] for x in thislane], xmax, 0)
             types = set([x["type"] for x in thislane])
