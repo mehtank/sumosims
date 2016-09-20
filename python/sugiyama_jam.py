@@ -12,8 +12,11 @@ from agent_types import basicHumanParams as humanParams, \
 
 if __name__ == "__main__":
     numLanes = 1
+    simStepLength = 0.5
+    simTime = 500
+    simSteps = int(simTime/simStepLength)
 
-    sim = LoopSim("loopsim", length=230, numLanes=numLanes, simStepLength=0.5)
+    sim = LoopSim("loopsim", length=230, numLanes=numLanes, simStepLength=simStepLength)
 
     vTypeParams = humanParams
     vTypeParams["laneSpread"] = True
@@ -29,7 +32,7 @@ if __name__ == "__main__":
 
         opts = {
             "paramsList" : [vTypeParams],
-            "simSteps"   : 500,
+            "simSteps"   : simSteps,
             "tag"        : "Sugiyama",
         }
 

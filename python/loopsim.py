@@ -129,24 +129,44 @@ class LoopSim:
         cars = {}
         self.numCars = 0
 
+        # Tabulate total number of cars per lane
+        num_cars_per_lane = [0] * self.numLanes
+
         # Create car list
         for param in paramsList:
             self.numCars += param["count"]
             for i in range(param["count"]):
                 vtype = param["name"]
                 laneSpread = param.get("laneSpread", True)
+                if laneSpread is not True:
+                    num_cars_per_lane[laneSpread] += 1
                 carname = "%s-%03d" % (vtype, i)
                 cars[carname] = (vtype, laneSpread)
 
-        lane = 0
+        lane = -1
         carsitems = cars.items()
+
         # Add all cars to simulation ...
-        random.shuffle(carsitems) # randomly
-        for i, (carname, (vtype, laneSpread)) in enumerate(carsitems):
-            x = self.length * i / self.numCars
-            self._createCar(carname, x, vtype, 
-                    lane if laneSpread is True else laneSpread)
-            lane = (lane + 1) % self.numLanes
+        random.shuffle(carsitems)  # randomly
+
+        # Counters of cars added so far (per lane)
+        cars_added_per_lane = [0] * self.numLanes
+        # For lanespead = True, set the default cars per lane
+        default_cars_per_lane = np.ceil(float(self.numCars) / self.numLanes)
+
+        for carname, (vtype, laneSpread) in carsitems:
+            if laneSpread is True:
+                # If lanespread = True, then uniformly set the car positions
+                lane = (lane + 1) % self.numLanes
+                lane_total = default_cars_per_lane
+            else:
+                # Otherwise, space the cars out evenly per lane
+                lane = laneSpread
+                lane_total = num_cars_per_lane[laneSpread]
+
+            x = self.length * cars_added_per_lane[lane] / lane_total
+            cars_added_per_lane[lane] += 1
+            self._createCar(carname, x, vtype, lane)
 
         self.carNames = cars.keys()
 
