@@ -4,10 +4,11 @@ from carfns import randomChangeLaneFn, ACCFnBuilder, changeFasterLaneBuilder,\
     MidpointFnBuilder, SwitchVTypeFn, FillGapFnBuilder, FillGapMidpointFnBuilder
 import config as defaults
 
-changeFasterLane = changeFasterLaneBuilder()
-# changeFasterLane = changeFasterLaneBuilder(likelihood=1, speedThreshold=2)
+# changeFasterLane = changeFasterLaneBuilder()
+changeFasterLane = changeFasterLaneBuilder(likelihood_mult=0.5, speedThreshold=2)
 basicHumanParams = {
     "name"        : "human",
+    "shape"       : "passenger",
     "count"       :  0,
     "maxSpeed"    :  defaults.MAX_SPEED,
     "accel"       :   2.6,
@@ -24,6 +25,7 @@ basicHumanParams = {
 
 basicRobotParams = {
     "name"        : "robot",
+    "shape"       : "evehicle",
     "count"       :  0,
     "maxSpeed"    :  defaults.MAX_SPEED,
     "accel"       :   4,
@@ -51,7 +53,7 @@ basicFillGapMidpointParams = copy.copy(basicRobotParams)
 basicFillGapMidpointParams["name"] = "fillgapmidpoint"
 basicFillGapMidpointParams["function"] = \
     FillGapMidpointFnBuilder(max_speed=40, gain=0.1, beta=0.9, duration=250,
-                             bias=1.0, ratio=0.25)
+                             bias=1.0, ratio=0.25, gap_threshold=10)
 
 basicMidpointParams = copy.copy(basicRobotParams)
 basicMidpointParams["name"] = "midpoint"

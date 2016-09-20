@@ -25,6 +25,7 @@ KNOWN_PARAMS = {
         "tau"           : traci.vehicletype.setTau,
         "speedFactor"   : traci.vehicletype.setSpeedFactor,
         "speedDev"      : traci.vehicletype.setSpeedDeviation,
+        "shape"         : traci.vehicletype.setShapeClass,
         }
 
 if defaults.RANDOM_SEED:
@@ -69,22 +70,26 @@ class LoopSim:
         self.net_path = ensure_dir("%s" % defaults.NET_PATH)
         self.data_path = ensure_dir("%s" % defaults.DATA_PATH)
         self.img_path = ensure_dir("%s" % defaults.IMG_PATH)
+        self.vid_path = ensure_dir("%s" % defaults.VID_PATH)
 
-    def _simInit(self, suffix, typeList):
-        self.cfgfn, self.outs = makecirc(self.name+suffix, 
+    def _simInit(self, typeList, sumo, sublane):
+        self.cfgfn, self.outs = makecirc(self.name+"-"+self.label, 
                 netfn=self.netfn, 
                 numcars=0, 
                 typelist=typeList,
                 dataprefix = defaults.DATA_PATH)
 
         # Start simulator
-        sumoBinary = checkBinary('sumo')
-        self.sumoProcess = subprocess.Popen([
+        sumoBinary = checkBinary(sumo)
+        sumoProcessArgs = [
                 sumoBinary, 
                 "--step-length", repr(self.simStepLength),
                 "--no-step-log",
                 "-c", self.cfgfn,
-                "--remote-port", str(self.port)], 
+                "--remote-port", str(self.port)]
+        if sublane:
+            sumoProcessArgs.extend(["--lateral-resolution", "5"])
+        self.sumoProcess = subprocess.Popen(sumoProcessArgs,
             stdout=sys.stdout, stderr=sys.stderr)
 
         # Initialize TraCI
@@ -145,7 +150,34 @@ class LoopSim:
 
         self.carNames = cars.keys()
 
-    def _run(self, simSteps):
+    def _setCarColor(self, car, speedRange):
+        if speedRange is None:
+            mn, mx = 0, self.maxSpeed
+        else:
+            mn, mx = speedRange
+        dv5 = (mx-mn)/5.
+
+        v = car["v"]
+        if v < mn:
+            # blue because black doesn't show up against the road
+            color = (0,0,255,0) 
+        elif v < mn + dv5:
+            # blue to red
+            color = (255.*(v-mn)/dv5, 0, 255.*(mn+dv5-v)/dv5, 0)
+        elif v < mn + 3*dv5:
+            # red to yellow
+            color = (255, 255.*(v-mn-dv5)/(2*dv5), 0, 0)
+        elif v < mx:
+            # yellow to green
+            color = (255.*(mx-v)/(2*dv5), 255, 0, 0)
+        else:
+            # green
+            color = (0, 255, 0, 0)
+
+        traci.vehicle.setColor(car["id"], color)
+
+    def _run(self, simSteps, speedRange, sumo):
+        vid_path = ensure_dir("%s/%s" % (self.vid_path, self.name+"-"+self.label))
         for step in range(simSteps):
             traci.simulationStep()
             self.allCars = []
@@ -158,13 +190,20 @@ class LoopSim:
                 car["lane"] = traci.vehicle.getLaneIndex(v)
                 car["x"] = self._getX(car["edge"], position)
                 car["v"] = traci.vehicle.getSpeed(v)
+                car["maxv"] = traci.vehicle.getMaxSpeed(v)
+                car["f"] = traci.vehicle.getSpeedFactor(v)
                 self.allCars.append(car)
             self.allCars.sort(key=lambda x: x["x"])
 
             for (idx, car) in enumerate(self.allCars):
+                self._setCarColor(car, speedRange)
                 carFn = self.carFns[car["type"]]
                 if carFn is not None:
                     carFn((idx, car), self, step)
+            if sumo == "sumo-gui":
+                # Save a frame of the gui output to file 
+                # Combine all frames to make a video animation of sim results
+                traci.gui.screenshot("View #0", "%s/%08d.png" % (vid_path, step))
 
         traci.close()
         sys.stdout.flush()
@@ -197,7 +236,7 @@ class LoopSim:
         return ret
 
 
-    def simulate(self, opts):
+    def simulate(self, opts, sumo=defaults.BINARY, speedRange=None, sublane=False):
 
         self.label = opts.get("label", None)
         tag = opts.get("tag", None)
@@ -207,20 +246,19 @@ class LoopSim:
 
         if self.label is None:
             self.label = "-".join([x["name"] + "%03d" % x["count"] 
-                                        for x in paramsList 
-                                        if x["count"] > 0])
+                                        for x in paramsList])
         if tag is not None:
             self.label += "-" + tag
 
-        self._simInit("-" + self.label, [x["name"] for x in paramsList])
+        self._simInit([x["name"] for x in paramsList], sumo, sublane)
         self._addTypes(paramsList)
         self._addCars(paramsList)
-        self._run(self.simSteps)
+        self._run(self.simSteps, speedRange, sumo)
 
     def plot(self, show=True, save=False, speedRange=None, fuelRange=None):
         # Plot results
         emfn = self.outs["emission"]
-        trng, xrng, avgspeeds, lanespeeds, (laneoccupancy, typecolors), totfuel, = parsexml(emfn, self.edgestarts, self.length, self.speedLimit)
+        trng, xrng, avgspeeds, lanespeeds, (laneoccupancy, typecolors), totfuel, looptimes = parsexml(emfn, self.edgestarts, self.length, self.speedLimit)
 
         if speedRange == 'avg':
             mnspeed = min([min(s) for s in avgspeeds.values()])
@@ -252,8 +290,8 @@ class LoopSim:
                 (trng, "Time (s)"),
                 (avgspeeds, "Average loop speed (m/s)"),
                 (lanespeeds, mnspeed, mxspeed, "Speed (m/s)"),
-                (laneoccupancy, "Vehicle positions", typecolors),
-                (totfuel, mnfuel, mxfuel, ("Fuel consumption", "(mL/s)", "(mL/m)")))
+                (looptimes, "Loop transit time (s)"),
+                (totfuel, mnfuel, mxfuel, "Speed std. dev. (m/s)"))
 
         fig = plt.gcf()
         if show:
