@@ -201,6 +201,8 @@ class LoopSim:
                 if carFn is not None:
                     carFn((idx, car), self, step)
             if sumo == "sumo-gui":
+                # Save a frame of the gui output to file 
+                # Combine all frames to make a video animation of sim results
                 traci.gui.screenshot("View #0", "%s/%08d.png" % (vid_path, step))
 
         traci.close()
