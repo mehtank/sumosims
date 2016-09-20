@@ -166,7 +166,7 @@ def pcolor_multi(title, (xrng, xlabel),
     fig.text(0.5, 0.975, title, 
             horizontalalignment='center', verticalalignment='top')
     '''
-    # Add colorbar
+    # Add colorbar, and adjust various fudge factors to make things align properly
     fig.subplots_adjust(right=0.85)
     if numlanes == 2:
         cbm = 0.52
